@@ -47,7 +47,7 @@ const paymentTransactionSchema = new mongoose.Schema(
     reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
     reviewedAt: { type: Date, default: null },
     rejectionReason: { type: String, trim: true, default: "" },
-    receiptNumber: { type: String, default: null, unique: true, sparse: true },
+    receiptNumber: { type: String, default: null },
     receiptPath: { type: String, default: "" },
     receiptIssuedAt: { type: Date, default: null },
     receiptDeliveryStatus: {
@@ -65,6 +65,11 @@ const paymentTransactionSchema = new mongoose.Schema(
 paymentTransactionSchema.index(
   { provider: 1, providerOrderId: 1 },
   { unique: true, partialFilterExpression: { providerOrderId: { $type: "string" } } }
+);
+
+paymentTransactionSchema.index(
+  { receiptNumber: 1 },
+  { unique: true, partialFilterExpression: { receiptNumber: { $type: "string" } } }
 );
 
 module.exports = mongoose.model("PaymentTransaction", paymentTransactionSchema);

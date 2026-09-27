@@ -10,6 +10,8 @@
 **/qa-*.png
 **/uploads/
 **/tmp/
+tmp/
+output/
 *.zip
 *.log
 

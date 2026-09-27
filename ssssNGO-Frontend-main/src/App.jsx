@@ -28,6 +28,7 @@ const AdminPayments = lazy(() => import("./pages/AdminPayments"));
 const AdminDonations = lazy(() => import("./pages/AdminDonations"));
 const AdminAccounts = lazy(() => import("./pages/AdminAccounts"));
 const AdminLayout = lazy(() => import("./layouts/AdminLayout"));
+const VerifyMembership = lazy(() => import("./pages/VerifyMembership"));
 
 const loadingFallback = (
   <div className="flex min-h-screen items-center justify-center bg-slate-50 text-sm font-semibold text-slate-600">
@@ -57,6 +58,7 @@ function App() {
           <Route path="/posts" element={<Posts />} />
           <Route path="/sangathan" element={<Sangathan />} />
           <Route path="/donate" element={<Donate />} />
+          <Route path="/verify/:memberId" element={<VerifyMembership />} />
           <Route path="/members" element={user?.joined ? <MembersDirectory /> : <Login />} />
           <Route path="/join" element={user ? <MembershipRequest /> : <Login />} />
 

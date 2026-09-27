@@ -2,6 +2,7 @@ const PDFDocument = require("pdfkit");
 const fs = require("fs");
 const path = require("path");
 const QRCode = require("qrcode");
+const { verificationUrlFor } = require("./membershipVerification");
 
 const ORG_NAME = "Swabhiman Shiksha Sanskriti Samajotthan Nyas";
 const BRAND = {
@@ -165,7 +166,7 @@ module.exports = async (member) => {
   const stream = fs.createWriteStream(filePath);
   doc.pipe(stream);
 
-  const verifyUrl = `${process.env.PUBLIC_API_URL || "https://swabhimanshikshasanskriti.in"}/verify/${encodeURIComponent(member.memberId)}`;
+  const verifyUrl = verificationUrlFor(member.memberId);
   const qr = await QRCode.toDataURL(verifyUrl, { margin: 0, errorCorrectionLevel: "M", color: { dark: BRAND.navy } });
   const logo = logoPath();
 
