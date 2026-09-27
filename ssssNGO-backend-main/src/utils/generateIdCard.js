@@ -24,6 +24,10 @@ const resolvePhoto = (filename) => filename && findAsset([
   path.join("src", "uploads", path.basename(filename)),
 ]);
 const logoPath = () => findAsset([path.join("src", "assets", "logo.png"), path.join("uploads", "logo.png")]);
+const authorisedSignaturePath = () => findAsset([
+  path.join("src", "assets", "id-card-authorised-signature.png"),
+  path.join("uploads", "id-card-authorised-signature.png"),
+]);
 
 const fitText = (doc, text, maxWidth, preferred, minimum = 6) => {
   let size = preferred;
@@ -110,7 +114,7 @@ const drawFront = (doc, member, logo) => {
     .text("swabhimanshikshasanskriti.in", 9, 271, { width: 78, align: "center", characterSpacing: 0.05 });
 };
 
-const drawBack = (doc, member, logo, qr) => {
+const drawBack = (doc, member, logo, qr, authorisedSignature) => {
   doc.rect(0, 0, CARD_WIDTH, CARD_HEIGHT).fill(BRAND.sky);
   doc.roundedRect(4, 4, CARD_WIDTH - 8, CARD_HEIGHT - 8, 8).lineWidth(1.2).strokeColor(BRAND.gold).stroke();
   doc.roundedRect(7, 7, CARD_WIDTH - 14, CARD_HEIGHT - 14, 6).lineWidth(0.4).strokeColor("#E4CD8B").stroke();
@@ -129,24 +133,31 @@ const drawBack = (doc, member, logo, qr) => {
   doc.fillColor("#F4E7C2").font("Helvetica-Bold").fontSize(organisationSubtitleSize)
     .text(organisationSubtitle, 44, 49, { width: 96, lineBreak: false, characterSpacing: 0.01 });
 
-  doc.fillColor(BRAND.ink).font("Helvetica").fontSize(6.5)
-    .text("This identity card remains the property of the organisation. If found, please contact the registered office.", 18, 88, { width: CARD_WIDTH - 36, align: "center", lineGap: 1.2 });
+  doc.fillColor(BRAND.ink).font("Helvetica").fontSize(5.6)
+    .text("This identity card remains the property of the organisation. If found, please return it to the registered office.", 15, 84, { width: CARD_WIDTH - 30, align: "center", lineGap: 0.6 });
+  doc.fillColor(BRAND.navy).font("Helvetica-Bold").fontSize(4.8)
+    .text("REGISTERED OFFICE", 15, 105, { width: CARD_WIDTH - 30, align: "center", characterSpacing: 0.35 });
+  doc.fillColor(BRAND.ink).font("Helvetica").fontSize(4.7)
+    .text("T-135, G.F, Rajpura Gurmandi, Rana Pratap Bagh, North Delhi - 07", 14, 113, { width: CARD_WIDTH - 28, align: "center", lineGap: 0.3 });
 
-  doc.roundedRect(38, 126, 77, 77, 4).fill("#FFFFFF").strokeColor(BRAND.gold).lineWidth(0.8).stroke();
-  doc.image(qr, 43, 131, { width: 67, height: 67 });
+  doc.roundedRect(45, 132, 63, 63, 4).fill("#FFFFFF").strokeColor(BRAND.gold).lineWidth(0.8).stroke();
+  doc.image(qr, 50, 137, { width: 53, height: 53 });
   doc.fillColor(BRAND.navy).font("Helvetica-Bold").fontSize(5.3)
-    .text("SCAN TO VERIFY MEMBERSHIP", 20, 208, { width: CARD_WIDTH - 40, align: "center", characterSpacing: 0.55 });
+    .text("SCAN TO VERIFY MEMBERSHIP", 20, 199, { width: CARD_WIDTH - 40, align: "center", characterSpacing: 0.55 });
 
   const membership = member.membershipType === "permanent" ? "Permanent Member" : "Annual Member";
   const validUntil = member.membershipType === "permanent" ? "Lifetime" : formatDate(member.validTill);
-  doc.fillColor(BRAND.muted).font("Helvetica").fontSize(5).text("MEMBERSHIP", 17, 224, { width: 41 });
-  doc.fillColor(BRAND.ink).font("Helvetica-Bold").fontSize(6).text(membership, 58, 223.5, { width: 78 });
-  doc.fillColor(BRAND.muted).font("Helvetica").fontSize(5).text("VALID UNTIL", 17, 236, { width: 41 });
-  doc.fillColor(BRAND.ink).font("Helvetica-Bold").fontSize(6).text(validUntil, 58, 235.5, { width: 78 });
+  doc.fillColor(BRAND.muted).font("Helvetica").fontSize(5).text("MEMBERSHIP", 17, 211, { width: 41 });
+  doc.fillColor(BRAND.ink).font("Helvetica-Bold").fontSize(6).text(membership, 58, 210.5, { width: 78 });
+  doc.fillColor(BRAND.muted).font("Helvetica").fontSize(5).text("VALID UNTIL", 17, 222, { width: 41 });
+  doc.fillColor(BRAND.ink).font("Helvetica-Bold").fontSize(6).text(validUntil, 58, 221.5, { width: 78 });
 
-  doc.moveTo(25, 253).lineTo(CARD_WIDTH - 25, 253).strokeColor(BRAND.gold).lineWidth(0.6).stroke();
+  if (authorisedSignature) {
+    doc.image(authorisedSignature, 39, 229, { fit: [75, 18], align: "center", valign: "center" });
+  }
+  doc.moveTo(25, 249).lineTo(CARD_WIDTH - 25, 249).strokeColor(BRAND.gold).lineWidth(0.6).stroke();
   doc.fillColor(BRAND.navy).font("Helvetica-Bold").fontSize(5.7)
-    .text("AUTHORISED SIGNATORY", 20, 258, { width: CARD_WIDTH - 40, align: "center", characterSpacing: 0.6 });
+    .text("AUTHORISED SIGNATORY", 20, 253, { width: CARD_WIDTH - 40, align: "center", characterSpacing: 0.6 });
 
   doc.rect(4, 269, CARD_WIDTH - 8, 10).fill(BRAND.navy);
   doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(5.2)
@@ -169,11 +180,12 @@ module.exports = async (member) => {
   const verifyUrl = verificationUrlFor(member.memberId);
   const qr = await QRCode.toDataURL(verifyUrl, { margin: 0, errorCorrectionLevel: "M", color: { dark: BRAND.navy } });
   const logo = logoPath();
+  const authorisedSignature = authorisedSignaturePath();
 
   doc.addPage({ size: [CARD_WIDTH, CARD_HEIGHT], margin: 0 });
   drawFront(doc, member, logo);
   doc.addPage({ size: [CARD_WIDTH, CARD_HEIGHT], margin: 0 });
-  drawBack(doc, member, logo, qr);
+  drawBack(doc, member, logo, qr, authorisedSignature);
   doc.end();
 
   await new Promise((resolve, reject) => { stream.on("finish", resolve); stream.on("error", reject); });

@@ -28,6 +28,11 @@ const findCertificateSeal = () => [
   path.resolve(rootDir, "uploads", "certificate-seal.png"),
 ].find(fs.existsSync);
 
+const findPresidentSignature = () => [
+  path.resolve(rootDir, "src", "assets", "president-signature.png"),
+  path.resolve(rootDir, "uploads", "president-signature.png"),
+].find(fs.existsSync);
+
 const formatDate = (value, fallback = "Not applicable") => {
   if (!value) return fallback;
   const date = new Date(value);
@@ -88,6 +93,7 @@ module.exports = async (member) => {
 
   const logo = findLogo();
   const certificateSeal = findCertificateSeal() || logo;
+  const presidentSignature = findPresidentSignature();
   if (logo) {
     doc.circle(PAGE_WIDTH / 2, 95, 47).fill("#FFFFFF");
     doc.image(logo, PAGE_WIDTH / 2 - 42, 53, { fit: [84, 84], align: "center", valign: "center" });
@@ -162,11 +168,14 @@ module.exports = async (member) => {
     doc.restore();
   }
 
+  if (presidentSignature) {
+    doc.image(presidentSignature, PAGE_WIDTH - 186, 676, { fit: [126, 34], align: "center", valign: "center" });
+  }
   doc.moveTo(PAGE_WIDTH - 190, 714).lineTo(PAGE_WIDTH - 55, 714).strokeColor(BRAND.navy).lineWidth(0.8).stroke();
   doc.fillColor(BRAND.navy).font("Helvetica-Bold").fontSize(9)
-    .text("Authorised Signatory", PAGE_WIDTH - 198, 721, { width: 150, align: "center" });
+    .text("President", PAGE_WIDTH - 198, 721, { width: 150, align: "center" });
   doc.fillColor(BRAND.muted).font("Helvetica").fontSize(7)
-    .text("For the Organisation", PAGE_WIDTH - 198, 737, { width: 150, align: "center" });
+    .text("Swabhiman Shiksha Sanskriti Samajotthan Nyas", PAGE_WIDTH - 198, 736, { width: 150, align: "center" });
 
   doc.path(`M 0 ${PAGE_HEIGHT - 72} L 330 ${PAGE_HEIGHT - 72} L 306 ${PAGE_HEIGHT - 27} L 0 ${PAGE_HEIGHT - 27} Z`).fill(BRAND.navy);
   doc.fillColor(BRAND.lightGold).font("Helvetica-Bold").fontSize(8)
