@@ -3,7 +3,7 @@ const path = require("path");
 const auth = require("../middleware/auth");
 const admin = require("../middleware/admin");
 const PaymentTransaction = require("../models/PaymentTransaction");
-const { issueDonationReceipt, deliverDonationReceipt } = require("../services/donationReceiptService");
+const { issueDonationReceipt, deliverDonationReceipt, ensureDonationReceiptFile } = require("../services/donationReceiptService");
 const { sendPrivateFile } = require("../utils/privateFiles");
 
 const router = express.Router();
@@ -54,9 +54,15 @@ router.post("/:id/reject", async (req, res) => {
 });
 
 router.get("/:id/receipt", async (req, res) => {
-  const donation = await PaymentTransaction.findOne({ _id: req.params.id, purpose: "donation", status: "verified" });
-  if (!donation?.receiptPath) return res.status(404).json({ message: "Receipt not found" });
-  return res.download(donation.receiptPath, `${donation.receiptNumber}.pdf`);
+  try {
+    let donation = await PaymentTransaction.findOne({ _id: req.params.id, purpose: "donation", status: "verified" });
+    if (!donation?.receiptNumber) return res.status(404).json({ message: "Receipt not found" });
+    donation = await ensureDonationReceiptFile(donation);
+    return res.download(donation.receiptPath, `${donation.receiptNumber}.pdf`);
+  } catch (error) {
+    console.error("Donation receipt download failed", { donationId: req.params.id, message: error.message });
+    return res.status(500).json({ message: "Receipt could not be prepared" });
+  }
 });
 
 router.post("/:id/resend", async (req, res) => {

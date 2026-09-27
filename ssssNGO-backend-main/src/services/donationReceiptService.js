@@ -10,11 +10,7 @@ const receiptNumberFor = (transaction) => {
 };
 
 async function deliverDonationReceipt(transaction, { force = false } = {}) {
-  if (!transaction.receiptPath || !fs.existsSync(transaction.receiptPath)) {
-    transaction.receiptPath = await generateDonationReceipt(transaction);
-    transaction.receiptDeliveryStatus = "generated";
-    await transaction.save();
-  }
+  transaction = await ensureDonationReceiptFile(transaction);
   if (!transaction.donor?.email || (transaction.receiptDeliveryStatus === "sent" && !force)) return transaction;
   transaction.receiptDeliveryAttempts += 1;
   try {
@@ -34,6 +30,15 @@ async function deliverDonationReceipt(transaction, { force = false } = {}) {
   return transaction;
 }
 
+async function ensureDonationReceiptFile(transaction) {
+  if (!transaction.receiptPath || !fs.existsSync(transaction.receiptPath)) {
+    transaction.receiptPath = await generateDonationReceipt(transaction);
+    if (transaction.receiptDeliveryStatus !== "sent") transaction.receiptDeliveryStatus = "generated";
+    await transaction.save();
+  }
+  return transaction;
+}
+
 async function issueDonationReceipt(transaction, options = {}) {
   const claimed = await PaymentTransaction.findOneAndUpdate(
     { _id: transaction._id, purpose: "donation", status: "verified", receiptNumber: null },
@@ -45,4 +50,4 @@ async function issueDonationReceipt(transaction, options = {}) {
   return deliverDonationReceipt(transaction, options);
 }
 
-module.exports = { receiptNumberFor, issueDonationReceipt, deliverDonationReceipt };
+module.exports = { receiptNumberFor, issueDonationReceipt, deliverDonationReceipt, ensureDonationReceiptFile };
