@@ -31,6 +31,12 @@ app.use("/uploads/docs", (_req, res) => res.status(404).end());
 app.use("/uploads/private", (_req, res) => res.status(404).end());
 app.use("/uploads/receipts", (_req, res) => res.status(404).end());
 
+app.use("/sangathan-assets", express.static(path.resolve(__dirname, "assets", "sangathan"), {
+  dotfiles: "deny",
+  index: false,
+  maxAge: "7d",
+}));
+
 // ================= STATIC UPLOADS =================
 app.use("/uploads", express.static(path.resolve(__dirname, "..", "uploads"), {
   dotfiles: "deny",
@@ -46,6 +52,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/posts", require("./routes/post"));
 app.use("/api/payments", require("./routes/payments"));
 app.use("/api/donations", require("./routes/donations"));
+app.use("/api/sangathan", require("./routes/sangathan"));
 app.use("/api/admin/donations", require("./routes/adminDonations"));
 app.use("/api/accounts", require("./routes/accounts"));
 

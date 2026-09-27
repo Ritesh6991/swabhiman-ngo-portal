@@ -16,6 +16,7 @@ const AdminUpload = lazy(() => import("./pages/AdminUpload"));
 const AdminEditPost = lazy(() => import("./pages/AdminEditPost"));
 const AdminAnalytics = lazy(() => import("./pages/AdminAnalytics"));
 const AdminMembers = lazy(() => import("./pages/AdminMembers"));
+const AdminSangathan = lazy(() => import("./pages/AdminSangathan"));
 const AdminRequests = lazy(() => import("./pages/AdminRequests"));
 const Sangathan = lazy(() => import("./pages/Sangathan"));
 const AdminPostList = lazy(() => import("./pages/AdminPostList"));
@@ -71,6 +72,7 @@ function App() {
             <Route path="edit/:id" element={<AdminEditPost />} />
             <Route path="requests" element={<AdminRequests />} />
             <Route path="members" element={<AdminMembers />} />
+            <Route path="sangathan" element={<AdminSangathan />} />
             <Route path="analytics" element={<AdminAnalytics />} />
             <Route path="payments" element={<AdminPayments />} />
             <Route path="donations" element={<AdminDonations />} />
