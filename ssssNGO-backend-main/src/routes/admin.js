@@ -73,6 +73,13 @@ router.post("/approve/:id", auth, admin, async (req, res) => {
       return res.status(409).json({ message: "Rejected applications cannot be approved. Ask the applicant to submit a new request." });
     }
 
+    const memberPhotoPath = path.resolve("uploads", "docs", request.photoFile || "");
+    if (!request.photoFile || !fs.existsSync(memberPhotoPath)) {
+      return res.status(409).json({
+        message: "The applicant photo is missing from server storage. Reject this request and ask the applicant to submit a new application.",
+      });
+    }
+
     let transaction = await PaymentTransaction.findOne({
       membershipRequestId: request._id,
       purpose: "membership",
