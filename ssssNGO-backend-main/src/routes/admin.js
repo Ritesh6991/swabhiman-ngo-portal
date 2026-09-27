@@ -9,6 +9,7 @@ const PaymentTransaction = require("../models/PaymentTransaction");
 const DeliveryLog = require("../models/DeliveryLog");
 const { getPaymentConfig } = require("../config/paymentConfig");
 const { activateMembership, deliverMembershipDocuments } = require("../services/membershipActivationService");
+const { confirmManualMembershipPayment } = require("../services/manualMembershipPaymentService");
 const path = require("path");
 const fs = require("fs");
 const { sendPrivateFile } = require("../utils/privateFiles");
@@ -63,27 +64,36 @@ router.get("/requests/:id/document/:kind", auth, admin, async (req, res) => {
   return sendPrivateFile(res, path.resolve("uploads", "docs"), request[field]);
 });
 
-// Approval is allowed only after a provider-verified payment.
+// Approval accepts a verified gateway payment or an explicit, auditable admin confirmation.
 router.post("/approve/:id", auth, admin, async (req, res) => {
   try {
     const request = await MembershipRequest.findById(req.params.id);
     if (!request) return res.status(404).json({ message: "Request not found" });
-    const transaction = await PaymentTransaction.findOne({
+    if (request.status === "rejected") {
+      return res.status(409).json({ message: "Rejected applications cannot be approved. Ask the applicant to submit a new request." });
+    }
+
+    let transaction = await PaymentTransaction.findOne({
       membershipRequestId: request._id,
       purpose: "membership",
       status: "verified",
     });
     if (!transaction) {
-      return res.status(409).json({ message: "Membership cannot be activated until payment is verified." });
+      transaction = await confirmManualMembershipPayment({
+        request,
+        adminId: req.user.id,
+        approval: req.body,
+      });
     }
     if (transaction.fulfillmentStatus !== "complete") await activateMembership(transaction);
-    res.json({ success: true, message: "Verified membership activated." });
+    res.json({
+      success: true,
+      message: "Payment verified and membership activated.",
+      paymentVerification: transaction.verificationType,
+    });
   } catch (err) {
     console.error("APPROVE ERROR:", err);
-    res.status(500).json({
-      message: "Approval failed",
-      error: err.message,
-    });
+    res.status(err.status || 500).json({ message: err.status ? err.message : "Approval failed", error: err.message });
   }
 });
 

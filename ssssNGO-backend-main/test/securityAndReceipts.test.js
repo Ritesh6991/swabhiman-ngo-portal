@@ -8,6 +8,7 @@ const { resolveInside } = require("../src/utils/privateFiles");
 const { receiptNumberFor } = require("../src/services/donationReceiptService");
 const PaymentTransaction = require("../src/models/PaymentTransaction");
 const { verificationUrlFor } = require("../src/utils/membershipVerification");
+const { normaliseManualApproval } = require("../src/services/manualMembershipPaymentService");
 
 test("admin and owner roles can use admin surfaces", () => {
   assert.equal(hasAdminAccess("admin"), true);
@@ -48,5 +49,20 @@ test("document QR codes target the public verification page", () => {
   assert.equal(
     verificationUrlFor("SVB-TEST 01", "https://portal.example/"),
     "https://portal.example/?verify=SVB-TEST%2001"
+  );
+});
+
+test("manual membership approval requires explicit payment confirmation", () => {
+  assert.throws(
+    () => normaliseManualApproval({ paymentMethod: "upi", transactionReference: "UTR-1" }),
+    /Confirm that the membership payment was received/
+  );
+  assert.throws(
+    () => normaliseManualApproval({ confirmPayment: true, paymentMethod: "upi", transactionReference: "" }),
+    /payment reference/
+  );
+  assert.deepEqual(
+    normaliseManualApproval({ confirmPayment: true, paymentMethod: "cash", transactionReference: "", note: " Received at office " }),
+    { paymentMethod: "cash", transactionReference: "", note: "Received at office" }
   );
 });

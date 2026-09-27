@@ -44,6 +44,13 @@ const AdminRequests = () => {
 
   const [pageLoading, setPageLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [actionError, setActionError] = useState("");
+  const [manualPayment, setManualPayment] = useState({ paymentMethod: "upi", transactionReference: "", note: "", confirmPayment: false });
+
+  useEffect(() => {
+    setActionError("");
+    setManualPayment({ paymentMethod: "upi", transactionReference: "", note: "", confirmPayment: false });
+  }, [selected?._id]);
 
   // FETCH REQUESTS
   const fetchRequests = async () => {
@@ -64,12 +71,24 @@ const AdminRequests = () => {
 
   // APPROVE
   const approve = async (id) => {
+    const needsManualConfirmation = selected?.paymentStatus !== "verified";
+    if (needsManualConfirmation && !manualPayment.confirmPayment) {
+      setActionError("Confirm that the payment was received before approving this membership.");
+      return;
+    }
+    if (needsManualConfirmation && manualPayment.paymentMethod !== "cash" && manualPayment.transactionReference.trim().length < 3) {
+      setActionError("Enter the UTR, cheque number, or payment reference.");
+      return;
+    }
     if (!window.confirm("Approve this membership after confirming its payment and documents?")) return;
     try {
       setActionLoading(true);
-      await API.post(`/admin/approve/${id}`);
+      setActionError("");
+      await API.post(`/admin/approve/${id}`, needsManualConfirmation ? manualPayment : {});
       await fetchRequests();
       setSelected(null);
+    } catch (requestError) {
+      setActionError(requestError.response?.data?.message || "Membership approval failed. Please try again.");
     } finally {
       setActionLoading(false);
     }
@@ -80,9 +99,12 @@ const AdminRequests = () => {
     if (!window.confirm("Reject this membership application?")) return;
     try {
       setActionLoading(true);
+      setActionError("");
       await API.post(`/admin/reject/${id}`);
       await fetchRequests();
       setSelected(null);
+    } catch (requestError) {
+      setActionError(requestError.response?.data?.message || "Membership rejection failed. Please try again.");
     } finally {
       setActionLoading(false);
     }
@@ -187,6 +209,35 @@ const AdminRequests = () => {
                 <SecureFileButton key={`${selected._id}-pan`} requestId={selected._id} available={selected.documentAvailability?.pan ?? selected.panFile} kind="pan" label="PAN" onPreview={setPreview} />
               </div></section>
 
+            {selected.status !== "approved" && selected.paymentStatus !== "verified" && (
+              <section className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                  <h3 className="font-bold text-[#102A43]">Payment verification</h3>
+                  <span className="text-xs font-bold uppercase tracking-wide text-amber-800">Admin confirmation required</span>
+                </div>
+                <p className="mt-1 text-sm text-slate-600">Confirm the payment received outside the online gateway. This creates an auditable transaction before the member ID is generated.</p>
+                <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                  <label className="text-sm font-semibold text-slate-700">Payment method
+                    <select className="form-input mt-1" value={manualPayment.paymentMethod} onChange={(event) => setManualPayment((current) => ({ ...current, paymentMethod: event.target.value }))}>
+                      <option value="upi">UPI</option><option value="bank_transfer">Bank transfer</option><option value="cash">Cash</option><option value="cheque">Cheque</option><option value="other">Other</option>
+                    </select>
+                  </label>
+                  <label className="text-sm font-semibold text-slate-700">UTR / receipt / reference {manualPayment.paymentMethod === "cash" ? "(optional)" : ""}
+                    <input className="form-input mt-1" value={manualPayment.transactionReference} onChange={(event) => setManualPayment((current) => ({ ...current, transactionReference: event.target.value }))} placeholder={manualPayment.paymentMethod === "cash" ? "Cash receipt number" : "Enter payment reference"} />
+                  </label>
+                </div>
+                <label className="mt-4 block text-sm font-semibold text-slate-700">Internal note (optional)
+                  <textarea rows="2" className="form-input mt-1" value={manualPayment.note} onChange={(event) => setManualPayment((current) => ({ ...current, note: event.target.value }))} placeholder="Who verified the payment or any useful context" />
+                </label>
+                <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-lg border border-amber-200 bg-white p-3 text-sm text-slate-700">
+                  <input type="checkbox" className="mt-0.5 h-4 w-4" checked={manualPayment.confirmPayment} onChange={(event) => setManualPayment((current) => ({ ...current, confirmPayment: event.target.checked }))} />
+                  <span>I confirm that the organisation received this membership payment and the applicant documents were reviewed.</span>
+                </label>
+              </section>
+            )}
+
+            {actionError && <p role="alert" className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{actionError}</p>}
+
             {/* ACTIONS */}
             <div className="flex gap-3 mt-6">
               {selected.status !== "approved" && (
@@ -198,7 +249,7 @@ const AdminRequests = () => {
                   {actionLoading && (
                     <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
                   )}
-                  Approve & Generate ID
+                  {selected.paymentStatus === "verified" ? "Approve & Generate ID" : "Verify Payment & Approve"}
                 </button>
               )}
 
