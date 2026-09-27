@@ -1,0 +1,22 @@
+import { AlertCircle, Inbox } from "lucide-react";
+
+const statusTones = {
+  pending: "border-amber-200 bg-amber-50 text-amber-700",
+  approved: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  verified: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  active: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  sent: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  complete: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  rejected: "border-rose-200 bg-rose-50 text-rose-700",
+  failed: "border-rose-200 bg-rose-50 text-rose-700",
+  missing: "border-slate-200 bg-slate-100 text-slate-600",
+};
+
+export const StatusBadge = ({ status }) => { const value = String(status || "unknown").toLowerCase(); return <span className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider ${statusTones[value] || "border-sky-200 bg-sky-50 text-sky-700"}`}>{value}</span>; };
+export const PageHeader = ({ eyebrow = "Operations", title, description, actions }) => <header className="flex flex-col gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-xs font-bold uppercase tracking-[0.22em] text-[#287080]">{eyebrow}</p><h1 className="mt-2 text-2xl font-bold tracking-tight text-[#102A43] sm:text-3xl">{title}</h1>{description && <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">{description}</p>}</div>{actions && <div className="flex flex-wrap gap-2">{actions}</div>}</header>;
+export const StatCard = ({ label, value, detail, icon: Icon, tone = "navy" }) => { const tones = tone === "gold" ? "bg-[#B98A2D] text-white" : tone === "teal" ? "bg-[#287080] text-white" : tone === "light" ? "border border-slate-200 bg-white text-[#102A43]" : "bg-[#102A43] text-white"; return <article className={`rounded-2xl p-5 shadow-sm ${tones}`}><div className="flex items-start justify-between gap-4"><div><p className={`text-xs font-bold uppercase tracking-[0.16em] ${tone === "light" ? "text-slate-500" : "text-white/65"}`}>{label}</p><p className="mt-3 text-3xl font-bold tracking-tight">{value}</p>{detail && <p className={`mt-2 text-xs ${tone === "light" ? "text-slate-500" : "text-white/70"}`}>{detail}</p>}</div>{Icon && <span className={`grid h-11 w-11 place-items-center rounded-xl ${tone === "light" ? "bg-slate-100 text-[#287080]" : "bg-white/10"}`}><Icon size={21} /></span>}</div></article>; };
+export const SectionCard = ({ title, description, action, children, className = "" }) => <section className={`rounded-2xl border border-slate-200 bg-white shadow-sm ${className}`}>{(title || action) && <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4"><div><h2 className="font-bold text-[#102A43]">{title}</h2>{description && <p className="mt-1 text-xs text-slate-500">{description}</p>}</div>{action}</div>}{children}</section>;
+export const EmptyState = ({ title, description }) => <div className="grid min-h-44 place-items-center p-8 text-center"><div><span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-slate-100 text-slate-400"><Inbox size={22} /></span><p className="mt-4 font-bold text-slate-700">{title}</p><p className="mt-1 max-w-md text-sm leading-6 text-slate-500">{description}</p></div></div>;
+export const LoadingState = ({ label = "Loading operational data…" }) => <div className="grid min-h-44 place-items-center p-8"><div className="text-center"><span className="mx-auto block h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-[#287080]" /><p className="mt-3 text-sm font-medium text-slate-500">{label}</p></div></div>;
+export const ErrorState = ({ message, onRetry }) => <div className="flex items-center justify-between gap-4 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800"><span className="flex items-center gap-2"><AlertCircle size={18} />{message}</span>{onRetry && <button onClick={onRetry} className="rounded-lg bg-white px-3 py-2 font-semibold shadow-sm">Retry</button>}</div>;
+export const ToolbarButton = ({ children, primary = false, danger = false, ...props }) => <button {...props} className={`inline-flex min-h-10 items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold shadow-sm transition disabled:cursor-not-allowed disabled:opacity-50 ${danger ? "bg-rose-600 text-white hover:bg-rose-700" : primary ? "bg-[#102A43] text-white hover:bg-[#287080]" : "border border-slate-200 bg-white text-slate-700 hover:border-[#287080]/40 hover:bg-slate-50"}`}>{children}</button>;

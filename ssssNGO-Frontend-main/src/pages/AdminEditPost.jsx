@@ -1,0 +1,13 @@
+import { useEffect, useState } from "react";
+import { ArrowLeft, Save } from "lucide-react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import API from "../services/api";
+import { ErrorState, LoadingState, PageHeader, SectionCard, ToolbarButton } from "../components/admin/AdminUI";
+
+const AdminEditPost = () => {
+  const { id } = useParams(); const navigate = useNavigate(); const [caption, setCaption] = useState(""); const [images, setImages] = useState([]); const [loading, setLoading] = useState(true); const [saving, setSaving] = useState(false); const [error, setError] = useState("");
+  useEffect(() => { API.get(`/posts/${id}`).then((response) => setCaption(response.data.caption || "")).catch((requestError) => setError(requestError.response?.data?.message || "Post could not be loaded.")).finally(() => setLoading(false)); }, [id]);
+  const handleUpdate = async (event) => { event.preventDefault(); try { setSaving(true); setError(""); const formData = new FormData(); formData.append("caption", caption); images.forEach((image) => formData.append("images", image)); await API.put(`/posts/${id}`, formData); navigate("/admin/posts"); } catch (requestError) { setError(requestError.response?.data?.message || "Post could not be updated."); } finally { setSaving(false); } };
+  return <main className="space-y-6"><PageHeader eyebrow="Public communication" title="Edit Post" description="Update the caption or replace the images for this public post." actions={<Link to="/admin/posts" className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700"><ArrowLeft size={17} />Back to posts</Link>} />{error && <ErrorState message={error} />}{loading ? <SectionCard><LoadingState label="Loading post…" /></SectionCard> : <SectionCard title="Post content" description="Leave images empty to keep the existing media."><form onSubmit={handleUpdate} className="space-y-5 p-5"><div><label className="form-label">Caption</label><textarea required rows="6" value={caption} onChange={(event) => setCaption(event.target.value)} className="form-input resize-none" /></div><div><label className="form-label">Replacement images (optional)</label><input type="file" multiple accept="image/*" onChange={(event) => setImages(Array.from(event.target.files || []))} className="form-input" /><p className="mt-2 text-xs text-slate-500">{images.length ? `${images.length} image${images.length === 1 ? "" : "s"} selected` : "Existing images will be preserved."}</p></div><ToolbarButton primary type="submit" disabled={saving}><Save size={17} />{saving ? "Saving…" : "Save changes"}</ToolbarButton></form></SectionCard>}</main>;
+};
+export default AdminEditPost;

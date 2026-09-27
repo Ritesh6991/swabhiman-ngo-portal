@@ -1,0 +1,75 @@
+services:
+  - type: web
+    name: swabhiman-ngo-api-ritesh
+    runtime: node
+    plan: free
+    rootDir: ssssNGO-backend-main
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: FRONTEND_URL
+        value: https://swabhiman-ngo-portal-ritesh.onrender.com
+      - key: PUBLIC_API_URL
+        value: https://swabhiman-ngo-api-ritesh.onrender.com
+      - key: CORS_ORIGINS
+        value: https://swabhiman-ngo-portal-ritesh.onrender.com
+      - key: MAIL_PROVIDER
+        value: resend
+      - key: RESEND_API_KEY
+        sync: false
+      - key: MAIL_FROM_ADDRESS
+        value: admin@swabhimanshikshasanskriti.in
+      - key: MAIL_FROM_NAME
+        value: Swabhiman Shiksha Sanskriti Samajotthan Nyas
+      - key: CLOUDINARY_NAME
+        sync: false
+      - key: CLOUDINARY_KEY
+        sync: false
+      - key: CLOUDINARY_SECRET
+        sync: false
+      - key: MEMBERSHIP_PAYMENT_PROVIDER
+        value: disabled
+      - key: MEMBERSHIP_PAYMENT_CURRENCY
+        value: INR
+      - key: MEMBERSHIP_YEARLY_AMOUNT
+        value: "1100"
+      - key: MEMBERSHIP_PERMANENT_AMOUNT
+        value: "5100"
+      - key: MEMBERSHIP_TAX_ENABLED
+        value: "false"
+      - key: DONATION_PAYMENT_PROVIDER
+        value: disabled
+      - key: DONATION_PAYMENT_CURRENCY
+        value: INR
+      - key: DONATION_MINIMUM_AMOUNT
+        value: "100"
+      - key: DONATION_TAX_ENABLED
+        value: "false"
+      - key: DONATION_PAYEE_NAME
+        value: Swabhiman Shiksha Sanskriti Samajotthan Nyas
+      - key: ORGANISATION_REGISTERED_ADDRESS
+        value: Delhi, India
+
+  - type: web
+    name: swabhiman-ngo-portal-ritesh
+    runtime: static
+    rootDir: ssssNGO-Frontend-main
+    plan: free
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    autoDeployTrigger: commit
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://swabhiman-ngo-api-ritesh.onrender.com/api
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
