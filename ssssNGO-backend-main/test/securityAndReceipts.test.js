@@ -47,6 +47,6 @@ test("receipt numbers are unique only after a real receipt is issued", () => {
 test("document QR codes target the public verification page", () => {
   assert.equal(
     verificationUrlFor("SVB-TEST 01", "https://portal.example/"),
-    "https://portal.example/verify/SVB-TEST%2001"
+    "https://portal.example/?verify=SVB-TEST%2001"
   );
 });

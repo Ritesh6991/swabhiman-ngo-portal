@@ -7,8 +7,9 @@ const formatDate = (value) => value ? new Date(value).toLocaleDateString("en-IN"
   day: "2-digit", month: "long", year: "numeric",
 }) : "No expiry";
 
-export default function VerifyMembership() {
-  const { memberId } = useParams();
+export default function VerifyMembership({ memberIdOverride = "" }) {
+  const { memberId: routeMemberId } = useParams();
+  const memberId = memberIdOverride || routeMemberId;
   const [state, setState] = useState({ loading: true, data: null, error: "" });
 
   useEffect(() => {

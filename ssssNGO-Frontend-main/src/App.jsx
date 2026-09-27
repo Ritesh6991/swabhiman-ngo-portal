@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import MainLayout from "./layouts/MainLayout";
 
@@ -38,6 +38,8 @@ const loadingFallback = (
 
 function App() {
   const { user } = useAuth();
+  const location = useLocation();
+  const verificationMemberId = new URLSearchParams(location.search).get("verify");
   const hasAdminAccess = ["admin", "owner"].includes(user?.role);
 
   return (
@@ -50,7 +52,7 @@ function App() {
         <Route path="/forgot-login-id" element={<ForgotLoginId />} />
 
         <Route element={<MainLayout />}>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={verificationMemberId ? <VerifyMembership memberIdOverride={verificationMemberId} /> : <Home />} />
           <Route path="/home" element={<Home />} />
           <Route path="/posts/:id" element={<PostDetail />} />
           <Route path="/about" element={<About />} />
