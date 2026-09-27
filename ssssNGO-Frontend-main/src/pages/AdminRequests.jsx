@@ -45,10 +45,12 @@ const AdminRequests = () => {
   const [pageLoading, setPageLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState("");
+  const [rejectConfirmationOpen, setRejectConfirmationOpen] = useState(false);
   const [manualPayment, setManualPayment] = useState({ paymentMethod: "upi", transactionReference: "", note: "", confirmPayment: false });
 
   useEffect(() => {
     setActionError("");
+    setRejectConfirmationOpen(false);
     setManualPayment({ paymentMethod: "upi", transactionReference: "", note: "", confirmPayment: false });
   }, [selected?._id]);
 
@@ -80,7 +82,6 @@ const AdminRequests = () => {
       setActionError("Enter the UTR, cheque number, or payment reference.");
       return;
     }
-    if (!window.confirm("Approve this membership after confirming its payment and documents?")) return;
     try {
       setActionLoading(true);
       setActionError("");
@@ -96,7 +97,6 @@ const AdminRequests = () => {
 
   // REJECT
   const reject = async (id) => {
-    if (!window.confirm("Reject this membership application?")) return;
     try {
       setActionLoading(true);
       setActionError("");
@@ -239,7 +239,18 @@ const AdminRequests = () => {
             {actionError && <p role="alert" className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{actionError}</p>}
 
             {/* ACTIONS */}
-            <div className="flex gap-3 mt-6">
+            {rejectConfirmationOpen && (
+              <div role="alertdialog" aria-labelledby="reject-confirmation-title" className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4">
+                <h3 id="reject-confirmation-title" className="font-bold text-red-800">Reject this application?</h3>
+                <p className="mt-1 text-sm text-red-700">This will mark the application as rejected. The applicant will need to submit a new application.</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button type="button" disabled={actionLoading} onClick={() => reject(selected._id)} className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60">Confirm Rejection</button>
+                  <button type="button" disabled={actionLoading} onClick={() => setRejectConfirmationOpen(false)} className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60">Cancel</button>
+                </div>
+              </div>
+            )}
+
+            <div className="mt-6 flex flex-wrap gap-3">
               {selected.status !== "approved" && (
                 <button
                   disabled={actionLoading}
@@ -253,10 +264,10 @@ const AdminRequests = () => {
                 </button>
               )}
 
-              {selected.status !== "rejected" && (
+              {selected.status !== "rejected" && !rejectConfirmationOpen && (
                 <button
                   disabled={actionLoading}
-                  onClick={() => reject(selected._id)}
+                  onClick={() => { setActionError(""); setRejectConfirmationOpen(true); }}
                   className="bg-red-600 text-white px-4 py-2 rounded flex items-center gap-2"
                 >
                   {actionLoading && (
