@@ -1,6 +1,7 @@
 
 import API from "../services/api";
-import { Country, State, City } from "country-state-city";
+import Country from "country-state-city/lib/country";
+import State from "country-state-city/lib/state";
 import { useState, useEffect } from "react";
 import { createMembershipPayment, openPaymentCheckout } from "../services/paymentService";
 
@@ -39,6 +40,28 @@ const MembershipRequest = () => {
 const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [cities, setCities] = useState([]);
+  const [citiesLoading, setCitiesLoading] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    if (!form.country || !form.state) {
+      setCities([]);
+      return () => { active = false; };
+    }
+    setCitiesLoading(true);
+    import("country-state-city/lib/city")
+      .then(({ default: City }) => {
+        if (active) setCities(City.getCitiesOfState(form.country, form.state));
+      })
+      .catch(() => {
+        if (active) setCities([]);
+      })
+      .finally(() => {
+        if (active) setCitiesLoading(false);
+      });
+    return () => { active = false; };
+  }, [form.country, form.state]);
 
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -186,8 +209,8 @@ useEffect(() => {
             onChange={handleChange}
             disabled={!form.state}
           >
-            <option value="">Select City</option>
-            {City.getCitiesOfState(form.country, form.state).map((c) => (
+            <option value="">{citiesLoading ? "Loading cities..." : "Select City"}</option>
+            {cities.map((c) => (
               <option key={c.name} value={c.name}>
                 {c.name}
               </option>

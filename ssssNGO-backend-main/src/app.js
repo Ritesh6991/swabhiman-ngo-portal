@@ -20,7 +20,9 @@ const allowedOrigins = (process.env.CORS_ORIGINS || process.env.FRONTEND_URL || 
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
-    callback(new Error("Origin not allowed"));
+    const error = new Error("Origin not allowed");
+    error.status = 403;
+    callback(error);
   },
   credentials: true,
 }));

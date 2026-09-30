@@ -35,8 +35,11 @@ async function deliverMembershipDocuments({ user, request, force = false }) {
 
   let idCardPath = request.idCardPath || user.idCardPath;
   let certificatePath = request.certificatePath || user.certificatePath;
-  if (!idCardPath || !fs.existsSync(idCardPath)) idCardPath = await generateIdCard(pdfUser);
-  if (!certificatePath || !fs.existsSync(certificatePath)) certificatePath = await generateCertificate(pdfUser);
+  // A forced resend must rebuild both PDFs so previously issued documents pick
+  // up the current logo, signatures, address and layout instead of reusing an
+  // older template from disk.
+  if (force || !idCardPath || !fs.existsSync(idCardPath)) idCardPath = await generateIdCard(pdfUser);
+  if (force || !certificatePath || !fs.existsSync(certificatePath)) certificatePath = await generateCertificate(pdfUser);
 
   delivery.status = "generated";
   delivery.idCardPath = idCardPath;

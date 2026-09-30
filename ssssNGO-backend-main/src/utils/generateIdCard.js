@@ -89,15 +89,21 @@ const drawFront = (doc, member, logo) => {
 
   const name = member.name || "Member";
   doc.fillColor(BRAND.muted).font("Helvetica").fontSize(5.5).text("NAME", 18, 174, { characterSpacing: 0.8 });
-  doc.fillColor(BRAND.navy).font("Helvetica-Bold").fontSize(fitText(doc, name.toUpperCase(), 117, 12, 7.5))
+  doc.font("Helvetica-Bold");
+  const nameSize = fitText(doc, name.toUpperCase(), 117, 12, 6);
+  doc.fillColor(BRAND.navy).fontSize(nameSize)
     .text(name.toUpperCase(), 18, 182, { width: 117, lineBreak: false });
 
   doc.fillColor(BRAND.muted).font("Helvetica").fontSize(5.5).text("MEMBER ID", 18, 198, { characterSpacing: 0.8 });
-  doc.fillColor(BRAND.ink).font("Helvetica-Bold").fontSize(fitText(doc, member.memberId || "Pending", 117, 9.5, 6.5))
+  doc.font("Helvetica-Bold");
+  const memberIdSize = fitText(doc, member.memberId || "Pending", 117, 9.5, 6);
+  doc.fillColor(BRAND.ink).fontSize(memberIdSize)
     .text(member.memberId || "Pending", 18, 206, { width: 117, lineBreak: false });
 
   doc.fillColor(BRAND.muted).font("Helvetica").fontSize(5.5).text("EMAIL", 18, 222, { characterSpacing: 0.8 });
-  doc.fillColor(BRAND.ink).font("Helvetica-Bold").fontSize(fitText(doc, member.email || "Not provided", 117, 7.5, 5.2))
+  doc.font("Helvetica-Bold");
+  const emailSize = fitText(doc, member.email || "Not provided", 117, 7.5, 4.8);
+  doc.fillColor(BRAND.ink).fontSize(emailSize)
     .text(member.email || "Not provided", 18, 230, { width: 117, lineBreak: false });
 
   const membership = member.membershipType === "permanent" ? "Permanent" : "Annual";
