@@ -58,11 +58,26 @@ module.exports = async (transaction) => {
   doc.fillColor("#172033").font("Helvetica").fontSize(11).text(acknowledgement, 78, 625, {
     width: doc.page.width - 156, align: "center", lineGap: 4,
   });
-  doc.moveTo(doc.page.width - 225, 715).lineTo(doc.page.width - 70, 715).strokeColor("#071F3E").stroke();
-  doc.fillColor("#071F3E").font("Helvetica-Bold").fontSize(10)
-    .text("Authorised Signatory", doc.page.width - 225, 723, { width: 155, align: "center" });
+
+  const noticeX = 88;
+  const noticeY = 692;
+  const noticeWidth = doc.page.width - 176;
+  doc.roundedRect(noticeX, noticeY, noticeWidth, 64, 8).fill("#F8F1DF");
+  doc.roundedRect(noticeX, noticeY, noticeWidth, 64, 8).lineWidth(0.8).strokeColor("#D6B45C").stroke();
+  doc.circle(noticeX + 31, noticeY + 32, 15).fill("#071F3E");
+  doc.moveTo(noticeX + 23, noticeY + 32)
+    .lineTo(noticeX + 29, noticeY + 38)
+    .lineTo(noticeX + 40, noticeY + 25)
+    .lineWidth(2.2).lineCap("round").lineJoin("round").strokeColor("#FFFFFF").stroke();
+  doc.fillColor("#071F3E").font("Helvetica-Bold").fontSize(9)
+    .text("SYSTEM-GENERATED RECEIPT", noticeX + 57, noticeY + 15, { width: noticeWidth - 76, characterSpacing: 0.7 });
+  doc.fillColor("#5C6470").font("Helvetica").fontSize(8.5)
+    .text("This receipt is electronically generated and does not require a physical or digital signature.", noticeX + 57, noticeY + 33, {
+      width: noticeWidth - 76,
+      lineGap: 1.5,
+    });
   doc.fillColor("#5C6470").font("Helvetica").fontSize(7.5)
-    .text("System-generated acknowledgement. Tax treatment is subject to the organisation's approved legal configuration.", 65, 775, {
+    .text("Tax treatment is subject to the organisation's approved legal configuration.", 65, 785, {
       width: doc.page.width - 130, align: "center",
     });
 
