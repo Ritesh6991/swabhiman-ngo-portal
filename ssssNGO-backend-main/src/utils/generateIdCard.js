@@ -134,16 +134,17 @@ const drawBack = (doc, member, logo, qr, authorisedSignature) => {
     .text(organisationSubtitle, 44, 49, { width: 96, lineBreak: false, characterSpacing: 0.01 });
 
   doc.fillColor(BRAND.ink).font("Helvetica").fontSize(5.6)
-    .text("This identity card remains the property of the organisation. If found, please return it to the registered office.", 15, 84, { width: CARD_WIDTH - 30, align: "center", lineGap: 0.6 });
+    .text("This identity card remains the property of the organisation. If found, please return it to the address below.", 15, 83, { width: CARD_WIDTH - 30, align: "center", lineGap: 0.7 });
+  doc.moveTo(61, 106).lineTo(CARD_WIDTH - 61, 106).strokeColor(BRAND.gold).lineWidth(0.6).stroke();
   doc.fillColor(BRAND.navy).font("Helvetica-Bold").fontSize(4.8)
-    .text("REGISTERED OFFICE", 15, 105, { width: CARD_WIDTH - 30, align: "center", characterSpacing: 0.35 });
+    .text("REGISTERED OFFICE", 15, 111, { width: CARD_WIDTH - 30, align: "center", characterSpacing: 0.45 });
   doc.fillColor(BRAND.ink).font("Helvetica").fontSize(4.7)
-    .text("T-135, G.F, Rajpura Gurmandi, Rana Pratap Bagh, North Delhi - 07", 14, 113, { width: CARD_WIDTH - 28, align: "center", lineGap: 0.3 });
+    .text("T-135, G.F, Rajpura Gurmandi, Rana Pratap Bagh, North Delhi - 07", 14, 120, { width: CARD_WIDTH - 28, align: "center", lineGap: 0.45 });
 
-  doc.roundedRect(45, 132, 63, 63, 4).fill("#FFFFFF").strokeColor(BRAND.gold).lineWidth(0.8).stroke();
-  doc.image(qr, 50, 137, { width: 53, height: 53 });
+  doc.roundedRect(47, 138, 59, 59, 4).fill("#FFFFFF").strokeColor(BRAND.gold).lineWidth(0.8).stroke();
+  doc.image(qr, 52, 143, { width: 49, height: 49 });
   doc.fillColor(BRAND.navy).font("Helvetica-Bold").fontSize(5.3)
-    .text("SCAN TO VERIFY MEMBERSHIP", 20, 199, { width: CARD_WIDTH - 40, align: "center", characterSpacing: 0.55 });
+    .text("SCAN TO VERIFY MEMBERSHIP", 20, 200, { width: CARD_WIDTH - 40, align: "center", characterSpacing: 0.55 });
 
   const membership = member.membershipType === "permanent" ? "Permanent Member" : "Annual Member";
   const validUntil = member.membershipType === "permanent" ? "Lifetime" : formatDate(member.validTill);
