@@ -31,3 +31,11 @@ test("rejects an untrusted origin with a controlled 403 response", async () => {
     assert.deepEqual(await response.json(), { message: "Origin not allowed" });
   });
 });
+
+test("health endpoint fails closed while MongoDB is disconnected", async () => {
+  await withServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}/health`);
+    assert.equal(response.status, 503);
+    assert.deepEqual(await response.json(), { status: "unavailable", database: "disconnected" });
+  });
+});

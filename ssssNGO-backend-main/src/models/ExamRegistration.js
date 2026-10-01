@@ -1,5 +1,16 @@
 const mongoose = require("mongoose");
 
+const storedDocumentSchema = new mongoose.Schema({
+  assetId: { type: String, required: true },
+  publicId: { type: String, required: true },
+  format: { type: String, required: true },
+  resourceType: { type: String, required: true },
+  deliveryType: { type: String, enum: ["authenticated"], required: true },
+  mimeType: { type: String, required: true },
+  originalName: { type: String, required: true, maxlength: 180 },
+  bytes: { type: Number, required: true, min: 1 },
+}, { _id: false });
+
 const examRegistrationSchema = new mongoose.Schema({
   examCycle: { type: mongoose.Schema.Types.ObjectId, ref: "ExamCycle", required: true, index: true },
   applicationNumber: { type: String, required: true, unique: true, index: true },
@@ -11,8 +22,8 @@ const examRegistrationSchema = new mongoose.Schema({
   fullAddress: { type: String, required: true, trim: true, maxlength: 800 },
   mobile: { type: String, required: true, trim: true, maxlength: 20 },
   email: { type: String, required: true, trim: true, lowercase: true, maxlength: 180 },
-  photoFile: { type: String, required: true },
-  aadhaarFile: { type: String, required: true },
+  photoFile: { type: storedDocumentSchema, required: true },
+  aadhaarFile: { type: storedDocumentSchema, required: true },
   status: { type: String, enum: ["pending", "approved", "rejected"], default: "pending", index: true },
   adminRemarks: { type: String, trim: true, maxlength: 1000, default: "" },
   reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },

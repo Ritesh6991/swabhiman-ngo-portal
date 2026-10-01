@@ -44,7 +44,7 @@
 - Private accounts: `src/models/Expense.js`, `src/routes/accounts.js`, owner RBAC middleware.
 - Private-file safeguards: `src/utils/privateFiles.js`, `src/middleware/privateUpload.js`.
 - Annual examinations: `src/models/ExamCycle.js`, `ExamRegistration.js`, `src/routes/exams.js`, with server-derived registration states and isolated candidate records.
-- Examination uploads: `src/middleware/examUpload.js`; student photographs and Aadhaar copies use private storage and authenticated Admin delivery.
+- Examination uploads: `src/middleware/examUpload.js` and `src/services/examDocumentStorage.js`; student photographs and Aadhaar copies are stored as Cloudinary `authenticated` assets and exposed only through authenticated Admin endpoints that issue short-lived signed downloads. They do not depend on Render's ephemeral filesystem.
 - Website announcements: `src/models/Announcement.js`, `src/routes/announcements.js`; active exam notices derive from the linked cycle dates as the single source of truth.
 - Frontend examination routes: public `/exam-registration/:slug`; Admin dashboard, registrations, Admit Cards handoff, settings and announcements under `/admin/exams*` and `/admin/announcements`.
 
@@ -62,7 +62,7 @@
 - Separate membership/donation provider keys and webhook secrets.
 - Resend or SMTP credentials and a verified sender.
 - Approved tax rates/settings from the organisation's accountant/legal adviser.
-- Organisation UPI ID/payee name, final registered address, and accountant-approved receipt acknowledgement.
+- Organisation UPI ID and payment-provider credentials remain pending; payment and UPI features must stay disabled until real credentials are supplied. The registered office address is `T-135, G.F, Rajpura Gurmandi, Rana Pratap Bagh, North Delhi - 07`.
 - An explicitly promoted `owner` account for access to Private Nyas Accounts.
 - The approved Admit Card design asset/specification before final generator, PDF and email-delivery integration.
 

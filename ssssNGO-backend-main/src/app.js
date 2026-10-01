@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const path = require("path");
 const helmet = require("helmet");
+const mongoose = require("mongoose");
 
 const authRoutes = require("./routes/authRoutes");
 const adminRoutes = require("./routes/admin");
@@ -62,6 +63,14 @@ app.use("/api/announcements", require("./routes/announcements"));
 
 app.get("/", (req, res) => {
   res.send("NGO API is running");
+});
+
+app.get("/health", (_req, res) => {
+  const databaseReady = mongoose.connection.readyState === 1;
+  res.status(databaseReady ? 200 : 503).json({
+    status: databaseReady ? "ok" : "unavailable",
+    database: databaseReady ? "connected" : "disconnected",
+  });
 });
 
 app.use((error, _req, res, _next) => {

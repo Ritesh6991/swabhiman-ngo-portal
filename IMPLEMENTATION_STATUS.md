@@ -1,6 +1,6 @@
 # Implementation Status
 
-Last verified: 2026-09-25
+Last verified: 2026-10-02
 
 | Requirement | Status | Notes |
 |---|---|---|
@@ -14,7 +14,7 @@ Last verified: 2026-09-25
 | Membership activation | COMPLETE | Direct activation is retired; atomic fulfillment runs only after a provider-verified transaction. |
 | ID card redesign | COMPLETE | Print-size vector PDF, photo fallback, long-name handling and QR verification reference were rendered and visually checked. |
 | Certificate redesign | COMPLETE | A4 landscape print-ready PDF with long-name handling and QR was rendered and visually checked. |
-| Automatic email | PARTIAL | Trigger and both attachments are implemented; live send is blocked by mail credentials and a verified sender. |
+| Automatic email | PARTIAL | Resend and the custom sender are configured and production delivery records show successful sends; the restricted send-only key cannot independently list domain-verification status. |
 | Delivery tracking/resend | COMPLETE | Pending/generated/sent/failed logs and an admin resend endpoint/UI are implemented. |
 | Payment idempotency | COMPLETE | Unique transaction keys, processed event IDs, amount/currency checks and atomic membership fulfillment prevent duplicate activation. |
 | Admin payment configuration | COMPLETE | Admin sees independent, non-secret configuration and payment/delivery status; secrets remain server-side. |
@@ -23,15 +23,16 @@ Last verified: 2026-09-25
 | Security review | COMPLETE | Helmet, CORS allowlist, rate limits, fresh-user authorization, upload constraints, safer auth responses and signed payment verification were added. |
 | Data-model review | COMPLETE | Existing user/request/post models were preserved and extended; separate payment, reset-token and delivery-log models were added. |
 | Provider abstraction | COMPLETE | Provider-specific logic is isolated behind a common adapter/factory, with independent membership and donation selection. |
-| Live external verification | BLOCKED | Requires MongoDB, payment sandbox/live credentials, webhook registration and mail-provider credentials. |
+| Live external verification | PARTIAL | MongoDB, Cloudinary, CORS, auth and historical Resend deliveries are verified. Payment/UPI remains intentionally disabled pending genuine credentials. |
 | Membership photo integration | COMPLETE | Required application photo remains linked to the membership request; activation now fails explicitly if the submitted photo is missing. |
 | Private membership documents | COMPLETE | Photo/Aadhaar/PAN static exposure is blocked; authenticated Admin preview endpoints and UI are implemented. |
 | Manual QR donations | PARTIAL | Proof upload, pending state and UI are complete; live QR display requires the organisation's UPI ID. |
-| Donation approval and receipts | COMPLETE | Idempotent Admin approve/reject, receipt identity, printable PDF, download and resend are implemented. Live email still needs mail credentials. |
+| Donation approval and receipts | COMPLETE | Idempotent Admin approve/reject, receipt identity, printable PDF, download and resend are implemented; production delivery records show successful email sends. |
 | Private Nyas accounts | COMPLETE | Owner-only expense entry/correction history, vouchers, filters, totals and CSV audit-preparation export are implemented. |
 | Financial RBAC | COMPLETE | Owner-only middleware protects accounts APIs, totals, vouchers and exports; ordinary Admin/member/public roles are denied. |
 | Annual examination cycles | COMPLETE | Admin can create/edit independent annual cycles; historical years remain available and public state derives from server dates. |
 | Public examination registration | COMPLETE | Direct no-login English form, mandatory photo/Aadhaar, validation, unique application number and acknowledgement are implemented. |
+| Examination document durability | COMPLETE | Photo/Aadhaar files use authenticated Cloudinary storage with short-lived signed Admin access; an isolated live round-trip confirmed persistence and private delivery without Render disk storage. |
 | Examination private documents | COMPLETE | File extension, MIME and signature validation plus private storage and authenticated Admin preview are implemented. |
 | Examination Admin workflow | COMPLETE | Dashboard, search/filter, candidate detail, protected documents, approve/reject and idempotent approval are implemented. |
 | Examination announcements | COMPLETE | Automatic exam notice bar/home card and scheduled reusable Admin announcements are implemented from authoritative dates. |
@@ -39,7 +40,7 @@ Last verified: 2026-09-25
 
 ## Verified checks
 
-- Backend automated tests: 12 passed, 0 failed.
+- Backend automated tests: 22 passed, 0 failed.
 - Backend application module load: passed.
 - Frontend ESLint: passed with 0 errors and 0 warnings.
 - Frontend production build: passed.
@@ -54,9 +55,8 @@ Last verified: 2026-09-25
 
 ## External setup remaining
 
-- MongoDB connection string and production JWT secret.
 - Membership Razorpay public/secret/webhook keys and registered webhook URL.
 - Donation gateway public/secret/webhook keys and registered webhook URL (may be a separate account/provider).
-- SMTP or Resend credentials plus an approved sender address.
-- Production frontend/backend URLs and CORS allowlist.
+- Payment provider and organisation UPI credentials are intentionally absent; both payment providers remain disabled until genuine credentials are supplied.
 - Accountant/client confirmation of final membership tax rate and receipt wording.
+- The separate approved Admit Card design required to implement its generator and email delivery.

@@ -5,8 +5,8 @@ const auth = require("../middleware/auth");
 const admin = require("../middleware/admin");
 const ExamCycle = require("../models/ExamCycle");
 const ExamRegistration = require("../models/ExamRegistration");
-const { examUpload, examPrivateRoot, removeExamFiles } = require("../middleware/examUpload");
-const { sendPrivateFile } = require("../utils/privateFiles");
+const { examUpload } = require("../middleware/examUpload");
+const { uploadExamDocuments, removeExamDocuments, sendPrivateDocument } = require("../services/examDocumentStorage");
 const { publicExamState, publicCycle } = require("../services/examState");
 
 const router = express.Router();
@@ -121,7 +121,7 @@ router.get("/admin/registrations/:id/documents/:kind", auth, admin, async (req, 
     if (!field) return res.status(404).json({ message: "Document not found" });
     const registration = await ExamRegistration.findById(req.params.id).select(field);
     if (!registration) return res.status(404).json({ message: "Registration not found" });
-    return sendPrivateFile(res, examPrivateRoot, registration[field], { download: req.query.download === "1" });
+    return sendPrivateDocument(res, registration[field], { download: req.query.download === "1" });
   } catch (error) { next(error); }
 });
 
@@ -167,21 +167,23 @@ const requireOpenCycle = async (req, res, next) => {
 };
 
 router.post("/:slug/registrations", registrationLimiter, requireOpenCycle, examUpload, async (req, res, next) => {
+  let storedDocuments;
   try {
     const cycle = req.examCycle;
     const values = registrationInput(req.body);
+    storedDocuments = await uploadExamDocuments(req.files);
     const suffix = require("crypto").randomBytes(4).toString("hex").toUpperCase();
     const registration = await ExamRegistration.create({
       ...values, normalizedStudentName: values.studentName.toLowerCase().replace(/\s+/g, " "), examCycle: cycle._id,
       applicationNumber: `ACE-${cycle.year}-${suffix}`,
-      photoFile: req.files.photo[0].filename, aadhaarFile: req.files.aadhaar[0].filename,
+      photoFile: storedDocuments.photo, aadhaarFile: storedDocuments.aadhaar,
     });
     res.status(201).json({
       message: "Registration submitted successfully.", studentName: registration.studentName,
       applicationNumber: registration.applicationNumber, examination: cycle.title, status: "PENDING REVIEW",
     });
   } catch (error) {
-    removeExamFiles(req.files);
+    if (storedDocuments) await removeExamDocuments([storedDocuments.photo, storedDocuments.aadhaar]);
     if (error.code === 11000) error = Object.assign(new Error("A registration for this student already exists for this examination"), { status: 409 });
     next(error);
   }

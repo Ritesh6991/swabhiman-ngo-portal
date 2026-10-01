@@ -6,7 +6,7 @@ services:
     rootDir: ssssNGO-backend-main
     buildCommand: npm ci
     startCommand: npm start
-    healthCheckPath: /
+    healthCheckPath: /health
     autoDeployTrigger: commit
     envVars:
       - key: NODE_ENV
@@ -56,7 +56,9 @@ services:
       - key: DONATION_PAYEE_NAME
         value: Swabhiman Shiksha Sanskriti Samajotthan Nyas
       - key: ORGANISATION_REGISTERED_ADDRESS
-        value: Delhi, India
+        value: T-135, G.F, Rajpura Gurmandi, Rana Pratap Bagh, North Delhi - 07
+      - key: EXAM_DOCUMENT_FOLDER
+        value: swabhiman/private/exams
 
   - type: web
     name: swabhiman-ngo-portal-ritesh

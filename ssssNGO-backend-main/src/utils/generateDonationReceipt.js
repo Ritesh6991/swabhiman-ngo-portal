@@ -29,7 +29,7 @@ module.exports = async (transaction) => {
   doc.fillColor("#E1C06C").font("Helvetica-Bold").fontSize(10)
     .text("SHIKSHA SANSKRITI SAMAJOTTHAN NYAS", 150, 89, { characterSpacing: 0.35 });
   doc.fillColor("#FFFFFF").font("Helvetica").fontSize(8.5)
-    .text(process.env.ORGANISATION_REGISTERED_ADDRESS || "Delhi, India", 150, 109);
+    .text(process.env.ORGANISATION_REGISTERED_ADDRESS || "T-135, G.F, Rajpura Gurmandi, Rana Pratap Bagh, North Delhi - 07", 150, 109);
 
   doc.fillColor("#071F3E").font("Times-Bold").fontSize(29).text("DONATION RECEIPT", 48, 182, {
     width: doc.page.width - 96, align: "center", characterSpacing: 1.2,
