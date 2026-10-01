@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { BarChart3, Building2, CreditCard, FilePlus2, HandCoins, LayoutDashboard, LogOut, Menu, Newspaper, ReceiptIndianRupee, ShieldCheck, UserRoundCheck, UsersRound } from "lucide-react";
+import { BarChart3, Building2, CalendarCog, ClipboardList, CreditCard, FileBadge2, FilePlus2, HandCoins, LayoutDashboard, LogOut, Megaphone, Menu, Newspaper, ReceiptIndianRupee, ShieldCheck, UserRoundCheck, UsersRound } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import logo from "../assets/logo.png";
 
@@ -8,6 +8,7 @@ const groups = [
   { label: "Overview", items: [["/admin", "Dashboard", LayoutDashboard, true]] },
   { label: "Membership", items: [["/admin/requests", "Applications", UserRoundCheck], ["/admin/members", "Members", UsersRound], ["/admin/payments", "Payments & Delivery", CreditCard]] },
   { label: "Donations", items: [["/admin/donations", "Verification", HandCoins]] },
+  { label: "Examination", items: [["/admin/exams", "Exam Dashboard", CalendarCog, true], ["/admin/exams/registrations", "Registrations", ClipboardList], ["/admin/exams/admit-cards", "Admit Cards", FileBadge2], ["/admin/exams/settings", "Exam Settings", CalendarCog], ["/admin/announcements", "Announcements", Megaphone]] },
   { label: "Content", items: [["/admin/sangathan", "Sangathan", Building2], ["/admin/upload", "Upload Post", FilePlus2], ["/admin/posts", "Manage Posts", Newspaper]] },
   { label: "Insights", items: [["/admin/analytics", "Analytics", BarChart3]] },
 ];

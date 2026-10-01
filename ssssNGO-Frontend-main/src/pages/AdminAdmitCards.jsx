@@ -1,0 +1,4 @@
+import { FileBadge2 } from "lucide-react";
+import { PageHeader, SectionCard } from "../components/admin/AdminUI";
+const AdminAdmitCards = () => <div className="space-y-6"><PageHeader eyebrow="Examination" title="Admit Cards" description="Approved registrations will enter the existing approval flow here." /><SectionCard><div className="grid min-h-72 place-items-center p-8 text-center"><div><span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-[#102A43] text-[#D4B05F]"><FileBadge2 /></span><h2 className="mt-5 text-xl font-bold text-[#102A43]">Generator awaiting approved design</h2><p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-600">Registration approval is implemented and idempotent. The Admit Card generator will be connected here after the separate approved design is supplied. It will remain completely separate from Membership ID Cards.</p></div></div></SectionCard></div>;
+export default AdminAdmitCards;

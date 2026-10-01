@@ -4,10 +4,12 @@ import PostCard from "../components/PostCard";
 import PostSkeleton from "../components/PostSkeleton";
 import API from "../services/api";
 import { useEffect, useState } from "react";
+import AnnouncementBar from "../components/AnnouncementBar";
 
 const Home = () => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [announcement, setAnnouncement] = useState(null);
 
   const fetchPosts = async () => {
     const res = await API.get("/posts");
@@ -17,12 +19,14 @@ const Home = () => {
 
   useEffect(() => {
     fetchPosts();
+    API.get("/announcements/active").then(({ data }) => setAnnouncement(data.find((item) => ["homepage", "both"].includes(item.placement)) || null)).catch(() => {});
   }, []);
 
   return (
     <>
       {/* HERO SLIDER */}
       <HeroSlider />
+      <AnnouncementBar announcement={announcement} compact />
 
       {/* POSTS SECTION */}
       <section className="max-w-7xl mx-auto px-6 py-16">

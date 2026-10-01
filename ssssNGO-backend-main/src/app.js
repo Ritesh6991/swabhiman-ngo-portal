@@ -57,6 +57,8 @@ app.use("/api/donations", require("./routes/donations"));
 app.use("/api/sangathan", require("./routes/sangathan"));
 app.use("/api/admin/donations", require("./routes/adminDonations"));
 app.use("/api/accounts", require("./routes/accounts"));
+app.use("/api/exams", require("./routes/exams"));
+app.use("/api/announcements", require("./routes/announcements"));
 
 app.get("/", (req, res) => {
   res.send("NGO API is running");
@@ -64,7 +66,8 @@ app.get("/", (req, res) => {
 
 app.use((error, _req, res, _next) => {
   console.error("Request failed:", error.message);
-  res.status(error.status || 500).json({ message: error.status ? error.message : "Unexpected server error" });
+  const status = error.status || (error.name === "ValidationError" ? 400 : 500);
+  res.status(status).json({ message: status < 500 ? error.message : "Unexpected server error" });
 });
 
 module.exports = app;

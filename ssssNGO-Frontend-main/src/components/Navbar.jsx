@@ -77,7 +77,7 @@ const Navbar = () => {
 </motion.div>
 
         {/* DESKTOP MENU */}
-        <div className="hidden md:flex items-center gap-6">
+        <div className="hidden lg:flex items-center gap-6">
           <NavLink to="/">Home</NavLink>
 
           <NavLink to="/Posts">
@@ -147,7 +147,7 @@ const Navbar = () => {
         {/* MOBILE BUTTON */}
         <button
           onClick={() => setOpen(!open)}
-          className="md:hidden text-[#EDEDCE]"
+          className="lg:hidden text-[#EDEDCE]"
         >
           {open ? <X size={26} /> : <Menu size={26} />}
         </button>
@@ -162,7 +162,7 @@ const Navbar = () => {
             animate="visible"
             exit="hidden"
             transition={{ duration: 0.3 }}
-            className="md:hidden bg-[#296374] overflow-hidden"
+            className="lg:hidden bg-[#296374] overflow-hidden"
           >
             <div className="flex flex-col gap-4 px-6 py-5">
               <NavLink to="/">Home</NavLink>

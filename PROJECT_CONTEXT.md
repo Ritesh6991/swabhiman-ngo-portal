@@ -43,6 +43,18 @@
 - Donation receipts: `src/services/donationReceiptService.js`, `src/utils/generateDonationReceipt.js`.
 - Private accounts: `src/models/Expense.js`, `src/routes/accounts.js`, owner RBAC middleware.
 - Private-file safeguards: `src/utils/privateFiles.js`, `src/middleware/privateUpload.js`.
+- Annual examinations: `src/models/ExamCycle.js`, `ExamRegistration.js`, `src/routes/exams.js`, with server-derived registration states and isolated candidate records.
+- Examination uploads: `src/middleware/examUpload.js`; student photographs and Aadhaar copies use private storage and authenticated Admin delivery.
+- Website announcements: `src/models/Announcement.js`, `src/routes/announcements.js`; active exam notices derive from the linked cycle dates as the single source of truth.
+- Frontend examination routes: public `/exam-registration/:slug`; Admin dashboard, registrations, Admit Cards handoff, settings and announcements under `/admin/exams*` and `/admin/announcements`.
+
+## Examination Decisions
+
+- Examination registration is public and separate from Membership applications and identities.
+- Application numbers are issued at submission; roll numbers and Admit Cards remain separate and are not fabricated before approval.
+- Approval is idempotent and currently records `pending_design`; the Admit Card generator will be implemented only after the separately approved design is supplied.
+- Duplicate protection uses examination cycle + normalized student name + date of birth, allowing siblings to share contact details.
+- Registration open/upcoming/closed decisions are enforced by the backend, not only hidden in the frontend.
 
 ## Configuration Needed
 
@@ -52,6 +64,7 @@
 - Approved tax rates/settings from the organisation's accountant/legal adviser.
 - Organisation UPI ID/payee name, final registered address, and accountant-approved receipt acknowledgement.
 - An explicitly promoted `owner` account for access to Private Nyas Accounts.
+- The approved Admit Card design asset/specification before final generator, PDF and email-delivery integration.
 
 ## Testing Status
 

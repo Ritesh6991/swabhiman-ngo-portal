@@ -30,6 +30,12 @@ Last verified: 2026-09-25
 | Donation approval and receipts | COMPLETE | Idempotent Admin approve/reject, receipt identity, printable PDF, download and resend are implemented. Live email still needs mail credentials. |
 | Private Nyas accounts | COMPLETE | Owner-only expense entry/correction history, vouchers, filters, totals and CSV audit-preparation export are implemented. |
 | Financial RBAC | COMPLETE | Owner-only middleware protects accounts APIs, totals, vouchers and exports; ordinary Admin/member/public roles are denied. |
+| Annual examination cycles | COMPLETE | Admin can create/edit independent annual cycles; historical years remain available and public state derives from server dates. |
+| Public examination registration | COMPLETE | Direct no-login English form, mandatory photo/Aadhaar, validation, unique application number and acknowledgement are implemented. |
+| Examination private documents | COMPLETE | File extension, MIME and signature validation plus private storage and authenticated Admin preview are implemented. |
+| Examination Admin workflow | COMPLETE | Dashboard, search/filter, candidate detail, protected documents, approve/reject and idempotent approval are implemented. |
+| Examination announcements | COMPLETE | Automatic exam notice bar/home card and scheduled reusable Admin announcements are implemented from authoritative dates. |
+| Admit Card generator | BLOCKED | Approval handoff is implemented as `pending_design`; exact generator/PDF/email work awaits the separately approved Admit Card design. Membership ID Card code is not reused. |
 
 ## Verified checks
 

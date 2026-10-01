@@ -30,6 +30,12 @@ const AdminDonations = lazy(() => import("./pages/AdminDonations"));
 const AdminAccounts = lazy(() => import("./pages/AdminAccounts"));
 const AdminLayout = lazy(() => import("./layouts/AdminLayout"));
 const VerifyMembership = lazy(() => import("./pages/VerifyMembership"));
+const ExamRegistration = lazy(() => import("./pages/ExamRegistration"));
+const AdminExamDashboard = lazy(() => import("./pages/AdminExamDashboard"));
+const AdminExamRegistrations = lazy(() => import("./pages/AdminExamRegistrations"));
+const AdminExamSettings = lazy(() => import("./pages/AdminExamSettings"));
+const AdminAdmitCards = lazy(() => import("./pages/AdminAdmitCards"));
+const AdminAnnouncements = lazy(() => import("./pages/AdminAnnouncements"));
 
 const loadingFallback = (
   <div className="flex min-h-screen items-center justify-center bg-slate-50 text-sm font-semibold text-slate-600">
@@ -62,6 +68,7 @@ function App() {
           <Route path="/sangathan" element={<Sangathan />} />
           <Route path="/donate" element={<Donate />} />
           <Route path="/verify/:memberId" element={<VerifyMembership />} />
+          <Route path="/exam-registration/:slug" element={<ExamRegistration />} />
           <Route path="/members" element={user?.joined ? <MembersDirectory /> : <Login />} />
           <Route path="/join" element={user ? <MembershipRequest /> : <Login />} />
 
@@ -76,6 +83,11 @@ function App() {
             <Route path="analytics" element={<AdminAnalytics />} />
             <Route path="payments" element={<AdminPayments />} />
             <Route path="donations" element={<AdminDonations />} />
+            <Route path="exams" element={<AdminExamDashboard />} />
+            <Route path="exams/registrations" element={<AdminExamRegistrations />} />
+            <Route path="exams/admit-cards" element={<AdminAdmitCards />} />
+            <Route path="exams/settings" element={<AdminExamSettings />} />
+            <Route path="announcements" element={<AdminAnnouncements />} />
             <Route path="accounts" element={user?.role === "owner" ? <AdminAccounts /> : <Navigate to="/admin" replace />} />
           </Route>
         </Route>
