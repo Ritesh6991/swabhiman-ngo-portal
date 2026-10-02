@@ -9,9 +9,18 @@ const adminRoutes = require("./routes/admin");
 
 const app = express();
 
-// Render terminates public HTTP traffic at one reverse-proxy hop before the
-// Node service. Trust only that nearest hop so req.ip and IP-based rate limits
-// use Render's forwarded client address without accepting an arbitrary chain.
+// Render places the real client address first in X-Forwarded-For and may retain
+// values supplied upstream after it. On Render, keep only that trusted first
+// value, then trust exactly the single Render hop in front of this service.
+// This prevents clients from rotating a spoofed suffix to evade IP rate limits.
+app.use((req, _res, next) => {
+  if (process.env.RENDER === "true" && req.headers["x-forwarded-for"]) {
+    req.headers["x-forwarded-for"] = String(req.headers["x-forwarded-for"])
+      .split(",")[0]
+      .trim();
+  }
+  next();
+});
 app.set("trust proxy", 1);
 
 // ================= MIDDLEWARE =================
