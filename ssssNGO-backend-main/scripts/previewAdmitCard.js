@@ -4,9 +4,12 @@ const sharp = require("sharp");
 const generateAdmitCard = require("../src/utils/generateAdmitCard");
 
 async function main() {
-  const photo = await sharp({
-    create: { width: 420, height: 520, channels: 3, background: "#eef3f7" },
-  }).composite([{ input: Buffer.from('<svg width="420" height="520"><circle cx="210" cy="170" r="82" fill="#8fa6b8"/><path d="M65 505c10-142 91-210 145-210s135 68 145 210" fill="#8fa6b8"/></svg>') }]).png().toBuffer();
+  const suppliedPhotoPath = process.argv[2] ? path.resolve(process.argv[2]) : "";
+  const photo = suppliedPhotoPath
+    ? fs.readFileSync(suppliedPhotoPath)
+    : await sharp({
+      create: { width: 420, height: 520, channels: 3, background: "#eef3f7" },
+    }).composite([{ input: Buffer.from('<svg width="420" height="520"><circle cx="210" cy="170" r="82" fill="#8fa6b8"/><path d="M65 505c10-142 91-210 145-210s135 68 145 210" fill="#8fa6b8"/></svg>') }]).png().toBuffer();
   const registration = {
     applicationNumber: "ACE-2026-DEMO001",
     studentName: "Ritesh Pal",

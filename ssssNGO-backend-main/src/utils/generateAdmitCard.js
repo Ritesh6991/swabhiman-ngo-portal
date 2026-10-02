@@ -24,7 +24,8 @@ const fitText = (doc, value, width, preferred, minimum = 4.5) => {
 
 const normalizePhoto = async (photoBuffer) => sharp(photoBuffer)
   .rotate()
-  .resize(420, 570, { fit: "cover", position: "attention" })
+  // Match the approved 139:198 photo slot exactly so PDFKit does not crop it again.
+  .resize(420, 598, { fit: "cover", position: "attention" })
   .jpeg({ quality: 92 })
   .toBuffer();
 
