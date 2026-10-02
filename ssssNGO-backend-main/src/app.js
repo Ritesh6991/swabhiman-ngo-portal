@@ -9,6 +9,11 @@ const adminRoutes = require("./routes/admin");
 
 const app = express();
 
+// Render terminates public HTTP traffic at one reverse-proxy hop before the
+// Node service. Trust only that nearest hop so req.ip and IP-based rate limits
+// use Render's forwarded client address without accepting an arbitrary chain.
+app.set("trust proxy", 1);
+
 // ================= MIDDLEWARE =================
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 app.use(express.json({
