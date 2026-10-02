@@ -16,7 +16,9 @@ const publicCycle = (cycle, now = new Date()) => ({
   examDate: cycle.examDate,
   reportingTime: cycle.reportingTime,
   examStartTime: cycle.examStartTime,
+  examDuration: cycle.examDuration,
   examinationCentre: cycle.examinationCentre,
+  examAddress: cycle.examAddress,
   instructions: cycle.instructions,
   registrationState: publicExamState(cycle, now),
 });

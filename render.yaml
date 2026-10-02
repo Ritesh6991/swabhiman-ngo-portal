@@ -58,7 +58,9 @@ services:
       - key: ORGANISATION_REGISTERED_ADDRESS
         value: T-135, G.F, Rajpura Gurmandi, Rana Pratap Bagh, North Delhi - 07
       - key: EXAM_DOCUMENT_FOLDER
-        value: swabhiman/private/exams
+        value: swabhiman/private/exams/documents
+      - key: EXAM_ADMIT_CARD_FOLDER
+        value: swabhiman/private/exams/admit-cards
 
   - type: web
     name: swabhiman-ngo-portal-ritesh

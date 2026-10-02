@@ -29,10 +29,16 @@ const examRegistrationSchema = new mongoose.Schema({
   reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
   reviewedAt: { type: Date, default: null },
   rollNumber: { type: String, default: "" },
-  admitCardStatus: { type: String, enum: ["not_ready", "pending_design", "generated", "sent", "failed"], default: "not_ready" },
+  admitCardStatus: { type: String, enum: ["not_ready", "pending_design", "generating", "generated", "sent", "failed"], default: "not_ready" },
+  admitCardFile: { type: storedDocumentSchema, default: null },
   admitCardPath: { type: String, default: "" },
   admitCardGeneratedAt: { type: Date, default: null },
   admitCardDeliveryStatus: { type: String, enum: ["not_started", "pending", "sent", "failed"], default: "not_started" },
+  admitCardDeliveryAttempts: { type: Number, default: 0, min: 0 },
+  admitCardLastAttemptAt: { type: Date, default: null },
+  admitCardSentAt: { type: Date, default: null },
+  admitCardProviderMessageId: { type: String, default: "", maxlength: 300 },
+  admitCardDeliveryError: { type: String, default: "", maxlength: 1000 },
 }, { timestamps: true });
 
 examRegistrationSchema.index(

@@ -7,6 +7,7 @@ const ExamCycle = require("../models/ExamCycle");
 const ExamRegistration = require("../models/ExamRegistration");
 const { examUpload } = require("../middleware/examUpload");
 const { uploadExamDocuments, removeExamDocuments, sendPrivateDocument } = require("../services/examDocumentStorage");
+const { generateAndStoreAdmitCard, deliverAdmitCard } = require("../services/admitCardService");
 const { publicExamState, publicCycle } = require("../services/examState");
 
 const router = express.Router();
@@ -28,10 +29,15 @@ const cycleInput = (body) => {
   if ([registrationStart, registrationEnd, examDate].some((date) => Number.isNaN(date.getTime()))) throw Object.assign(new Error("Valid registration and examination dates are required"), { status: 400 });
   if (!["draft", "scheduled", "active", "completed", "archived"].includes(status)) throw Object.assign(new Error("Invalid examination status"), { status: 400 });
   const instructions = Array.isArray(body.instructions) ? body.instructions : String(body.instructions || "").split("\n");
+  const examDuration = text(body.examDuration, 40);
+  const examinationCentre = text(body.examinationCentre, 500);
+  const examAddress = text(body.examAddress, 500);
+  if (!examDuration || !examinationCentre || !examAddress) throw Object.assign(new Error("Exam duration, centre/venue and full address are required"), { status: 400 });
   return {
     title, year, slug: slugFor(body.slug || `${year}`), registrationStart, registrationEnd, examDate,
     reportingTime: text(body.reportingTime, 40), examStartTime: text(body.examStartTime, 40),
-    examinationCentre: text(body.examinationCentre, 500), instructions: instructions.map((item) => text(item, 500)).filter(Boolean).slice(0, 20),
+    examDuration, examinationCentre, examAddress,
+    instructions: instructions.map((item) => text(item, 500)).filter(Boolean).slice(0, 20),
     status, admitCardReleaseAt: body.admitCardReleaseAt ? new Date(body.admitCardReleaseAt) : null,
     announcementEnabled: body.announcementEnabled !== false && body.announcementEnabled !== "false",
     homepageHighlight: body.homepageHighlight !== false && body.homepageHighlight !== "false",
@@ -62,7 +68,7 @@ router.get("/admin/dashboard", auth, admin, async (_req, res, next) => {
     ]);
     const counts = { total: 0, pending: 0, approved: 0, rejected: 0, admitCardsGenerated: 0 };
     totals.forEach((item) => { counts[item._id] = item.count; counts.total += item.count; });
-    counts.admitCardsGenerated = await ExamRegistration.countDocuments({ ...match, admitCardStatus: "generated" });
+    counts.admitCardsGenerated = await ExamRegistration.countDocuments({ ...match, admitCardStatus: { $in: ["generated", "sent"] } });
     res.json({ counts, current: current ? publicCycle(current) : null, recent, cycles: cycles.map((cycle) => publicCycle(cycle)) });
   } catch (error) { next(error); }
 });
@@ -102,7 +108,7 @@ router.get("/admin/registrations", auth, admin, async (req, res, next) => {
       query.$or = [{ studentName: regex }, { applicationNumber: regex }, { email: regex }, { mobile: regex }];
     }
     const registrations = await ExamRegistration.find(query).populate("examCycle", "title year slug").sort({ createdAt: -1 }).limit(500)
-      .select("applicationNumber studentName fatherName dateOfBirth className mobile email status adminRemarks admitCardStatus rollNumber createdAt examCycle");
+      .select("applicationNumber studentName fatherName dateOfBirth className mobile email status adminRemarks admitCardStatus admitCardDeliveryStatus admitCardDeliveryAttempts admitCardGeneratedAt admitCardSentAt rollNumber createdAt examCycle");
     res.json(registrations);
   } catch (error) { next(error); }
 });
@@ -125,16 +131,69 @@ router.get("/admin/registrations/:id/documents/:kind", auth, admin, async (req, 
   } catch (error) { next(error); }
 });
 
+router.get("/admin/admit-cards", auth, admin, async (req, res, next) => {
+  try {
+    const query = { status: "approved" };
+    if (req.query.year) {
+      const cycle = await ExamCycle.findOne({ year: Number(req.query.year) }).select("_id");
+      query.examCycle = cycle?._id || new mongoose.Types.ObjectId();
+    }
+    if (req.query.search) {
+      const regex = new RegExp(escapeRegex(text(req.query.search, 100)), "i");
+      query.$or = [{ studentName: regex }, { applicationNumber: regex }, { email: regex }];
+    }
+    const registrations = await ExamRegistration.find(query).populate("examCycle", "title year")
+      .sort({ reviewedAt: -1 }).limit(500)
+      .select("applicationNumber studentName className email admitCardStatus admitCardDeliveryStatus admitCardDeliveryAttempts admitCardGeneratedAt admitCardSentAt admitCardDeliveryError examCycle reviewedAt");
+    res.json(registrations);
+  } catch (error) { next(error); }
+});
+
+router.get("/admin/registrations/:id/admit-card", auth, admin, async (req, res, next) => {
+  try {
+    const registration = await ExamRegistration.findById(req.params.id).select("admitCardFile");
+    if (!registration?.admitCardFile?.publicId) return res.status(404).json({ message: "Admit Card has not been generated" });
+    return sendPrivateDocument(res, registration.admitCardFile, { download: req.query.download === "1" });
+  } catch (error) { next(error); }
+});
+
+router.post("/admin/registrations/:id/admit-card/generate", auth, admin, async (req, res, next) => {
+  try {
+    const registration = await ExamRegistration.findById(req.params.id).populate("examCycle");
+    if (!registration) return res.status(404).json({ message: "Registration not found" });
+    const result = await generateAndStoreAdmitCard(registration);
+    res.json({ registration: result.registration, message: "Admit Card generated and stored securely." });
+  } catch (error) { next(error); }
+});
+
+router.post("/admin/registrations/:id/admit-card/resend", auth, admin, async (req, res, next) => {
+  try {
+    const registration = await ExamRegistration.findById(req.params.id).populate("examCycle");
+    if (!registration) return res.status(404).json({ message: "Registration not found" });
+    const delivered = await deliverAdmitCard(registration, { force: true });
+    const sent = delivered.admitCardDeliveryStatus === "sent";
+    res.status(sent ? 200 : 502).json({
+      registration: delivered,
+      message: sent ? "Admit Card email sent." : `Admit Card email failed: ${delivered.admitCardDeliveryError}`,
+    });
+  } catch (error) { next(error); }
+});
+
 router.post("/admin/registrations/:id/approve", auth, admin, async (req, res, next) => {
   try {
     let registration = await ExamRegistration.findOneAndUpdate(
       { _id: req.params.id, status: { $ne: "approved" } },
-      { $set: { status: "approved", adminRemarks: text(req.body.remarks, 1000), reviewedBy: req.user.id, reviewedAt: new Date(), admitCardStatus: "pending_design" } },
+      { $set: { status: "approved", adminRemarks: text(req.body.remarks, 1000), reviewedBy: req.user.id, reviewedAt: new Date(), admitCardStatus: "not_ready" } },
       { new: true }
-    );
-    registration ||= await ExamRegistration.findById(req.params.id);
+    ).populate("examCycle");
+    registration ||= await ExamRegistration.findById(req.params.id).populate("examCycle");
     if (!registration) return res.status(404).json({ message: "Registration not found" });
-    res.json({ registration, message: "Application approved. Admit Card generation is pending the approved design integration." });
+    const delivered = await deliverAdmitCard(registration);
+    const sent = delivered.admitCardDeliveryStatus === "sent";
+    res.status(sent ? 200 : 502).json({
+      registration: delivered,
+      message: sent ? "Application approved. Admit Card generated, stored securely and emailed." : `Application approved and Admit Card generated, but email failed: ${delivered.admitCardDeliveryError}`,
+    });
   } catch (error) { next(error); }
 });
 
@@ -142,8 +201,13 @@ router.post("/admin/registrations/:id/reject", auth, admin, async (req, res, nex
   try {
     const remarks = text(req.body.remarks, 1000);
     if (!remarks) return res.status(400).json({ message: "Please provide a rejection reason" });
-    const registration = await ExamRegistration.findByIdAndUpdate(req.params.id, { status: "rejected", adminRemarks: remarks, reviewedBy: req.user.id, reviewedAt: new Date(), admitCardStatus: "not_ready" }, { new: true });
+    const existing = await ExamRegistration.findById(req.params.id).select("admitCardFile");
+    const registration = await ExamRegistration.findByIdAndUpdate(req.params.id, {
+      status: "rejected", adminRemarks: remarks, reviewedBy: req.user.id, reviewedAt: new Date(),
+      admitCardStatus: "not_ready", admitCardFile: null, admitCardPath: "", admitCardDeliveryStatus: "not_started",
+    }, { new: true });
     if (!registration) return res.status(404).json({ message: "Registration not found" });
+    if (existing?.admitCardFile?.publicId) await removeExamDocuments([existing.admitCardFile]);
     res.json(registration);
   } catch (error) { next(error); }
 });

@@ -4,19 +4,20 @@ const { pipeline } = require("stream/promises");
 const cloudinary = require("../config/cloudinary");
 
 const deliveryType = "authenticated";
-const folder = process.env.EXAM_DOCUMENT_FOLDER || "swabhiman/private/exams";
+const documentFolder = process.env.EXAM_DOCUMENT_FOLDER || "swabhiman/private/exams/documents";
+const admitCardFolder = process.env.EXAM_ADMIT_CARD_FOLDER || "swabhiman/private/exams/admit-cards";
 
 const ensureConfigured = () => {
   const missing = ["CLOUDINARY_NAME", "CLOUDINARY_KEY", "CLOUDINARY_SECRET"].filter((key) => !process.env[key]);
   if (missing.length) throw new Error(`Missing private document storage configuration: ${missing.join(", ")}`);
 };
 
-const uploadBuffer = (file) => new Promise((resolve, reject) => {
+const uploadBuffer = (file, { folder = documentFolder, resourceType = "auto" } = {}) => new Promise((resolve, reject) => {
   ensureConfigured();
   const stream = cloudinary.uploader.upload_stream({
     folder,
     public_id: crypto.randomUUID(),
-    resource_type: "auto",
+    resource_type: resourceType,
     type: deliveryType,
     overwrite: false,
     use_filename: false,
@@ -59,6 +60,13 @@ const uploadExamDocuments = async (files) => {
   }
 };
 
+const uploadAdmitCard = async (buffer, applicationNumber) => uploadBuffer({
+  buffer,
+  mimetype: "application/pdf",
+  originalname: `${applicationNumber}-Admit-Card.pdf`,
+  size: buffer.length,
+}, { folder: admitCardFolder, resourceType: "image" });
+
 const removeExamDocuments = async (documents) => {
   await Promise.allSettled((documents || []).filter(Boolean).map(destroyDocument));
 };
@@ -72,6 +80,12 @@ const privateDownloadUrl = (document, { download = false } = {}) => {
     expires_at: Math.floor(Date.now() / 1000) + 5 * 60,
     attachment: download,
   });
+};
+
+const downloadPrivateDocument = async (document) => {
+  const response = await fetch(privateDownloadUrl(document));
+  if (!response.ok) throw Object.assign(new Error("Stored examination document could not be retrieved"), { status: 502 });
+  return Buffer.from(await response.arrayBuffer());
 };
 
 const sendPrivateDocument = async (res, document, { download = false } = {}) => {
@@ -91,4 +105,11 @@ const sendPrivateDocument = async (res, document, { download = false } = {}) => 
   await pipeline(Readable.fromWeb(response.body), res);
 };
 
-module.exports = { uploadExamDocuments, removeExamDocuments, privateDownloadUrl, sendPrivateDocument };
+module.exports = {
+  uploadExamDocuments,
+  uploadAdmitCard,
+  removeExamDocuments,
+  privateDownloadUrl,
+  downloadPrivateDocument,
+  sendPrivateDocument,
+};

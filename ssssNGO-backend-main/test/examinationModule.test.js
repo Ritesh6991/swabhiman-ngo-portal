@@ -2,6 +2,9 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const { publicExamState, publicCycle } = require("../src/services/examState");
 const { detectExamDocumentContent } = require("../src/middleware/examUpload");
+const generateAdmitCard = require("../src/utils/generateAdmitCard");
+const fs = require("fs");
+const path = require("path");
 
 const cycle = (overrides = {}) => ({
   _id: "exam-1", title: "Alternative Competitive Examination 2026", year: 2026, slug: "2026",
@@ -35,4 +38,24 @@ test("examination document validation checks file signatures, not only MIME name
   assert.equal(detectExamDocumentContent(png).image, true);
   assert.equal(detectExamDocumentContent(pdf).document, true);
   assert.deepEqual(detectExamDocumentContent(disguised), { image: false, document: false });
+});
+
+test("approved Admit Card design renders as one A4 page with four populated cards", async () => {
+  const registration = {
+    applicationNumber: "ACE-2026-TEST0001",
+    studentName: "Ritesh Pal",
+    fatherName: "Test Parent",
+    dateOfBirth: new Date("1996-01-15T00:00:00.000Z"),
+    className: "Class 10",
+    examCycle: cycle({
+      examDuration: "2 Hours",
+      examinationCentre: "Swabhiman Examination Hall",
+      examAddress: "T-135, G.F, Rajpura Gurmandi, Rana Pratap Bagh, North Delhi - 07",
+    }),
+  };
+  const photoBuffer = fs.readFileSync(path.resolve(__dirname, "..", "src", "assets", "logo.png"));
+  const pdf = await generateAdmitCard({ registration, photoBuffer });
+  assert.equal(pdf.subarray(0, 5).toString(), "%PDF-");
+  assert.ok(pdf.length > 20_000);
+  assert.match(pdf.toString("latin1"), /\/Count 1\b/);
 });
