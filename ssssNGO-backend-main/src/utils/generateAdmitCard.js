@@ -3,14 +3,8 @@ const fs = require("fs");
 const path = require("path");
 const sharp = require("sharp");
 
-const PAGE_WIDTH = 595.28;
-const PAGE_HEIGHT = 841.89;
 const CARD_WIDTH = 263.62;
 const CARD_HEIGHT = 374.17;
-const LEFT_MARGIN = 28.35;
-const TOP_MARGIN = 22.7;
-const HORIZONTAL_GAP = 11.35;
-const VERTICAL_GAP = 14.15;
 const NAVY = "#101B2D";
 const rootDir = path.resolve(__dirname, "..", "..");
 const templatePath = path.resolve(rootDir, "src", "assets", "admit-card-template.jpg");
@@ -94,8 +88,10 @@ module.exports = async ({ registration, photoBuffer }) => {
   const photo = await normalizePhoto(photoBuffer);
   const chunks = [];
   const doc = new PDFDocument({
-    size: "A4", layout: "portrait", margin: 0,
-    info: { Title: `${registration.applicationNumber} Admit Card - A4 Four Up` },
+    size: [CARD_WIDTH, CARD_HEIGHT],
+    layout: "portrait",
+    margin: 0,
+    info: { Title: `${registration.applicationNumber} Admit Card` },
   });
   doc.on("data", (chunk) => chunks.push(chunk));
   const completed = new Promise((resolve, reject) => {
@@ -103,13 +99,7 @@ module.exports = async ({ registration, photoBuffer }) => {
     doc.on("error", reject);
   });
   doc.registerFont("NotoDevanagari", devanagariFontPath);
-  const positions = [
-    [LEFT_MARGIN, TOP_MARGIN],
-    [LEFT_MARGIN + CARD_WIDTH + HORIZONTAL_GAP, TOP_MARGIN],
-    [LEFT_MARGIN, TOP_MARGIN + CARD_HEIGHT + VERTICAL_GAP],
-    [LEFT_MARGIN + CARD_WIDTH + HORIZONTAL_GAP, TOP_MARGIN + CARD_HEIGHT + VERTICAL_GAP],
-  ];
-  positions.forEach(([x, y]) => drawCard(doc, { x, y, registration, photo }));
+  drawCard(doc, { x: 0, y: 0, registration, photo });
   doc.end();
   return completed;
 };

@@ -40,7 +40,7 @@ test("examination document validation checks file signatures, not only MIME name
   assert.deepEqual(detectExamDocumentContent(disguised), { image: false, document: false });
 });
 
-test("approved Admit Card design renders as one A4 page with four populated cards", async () => {
+test("approved Admit Card design renders as one correctly sized single-card page", async () => {
   const registration = {
     applicationNumber: "ACE-2026-TEST0001",
     studentName: "Ritesh Pal",
@@ -58,4 +58,5 @@ test("approved Admit Card design renders as one A4 page with four populated card
   assert.equal(pdf.subarray(0, 5).toString(), "%PDF-");
   assert.ok(pdf.length > 20_000);
   assert.match(pdf.toString("latin1"), /\/Count 1\b/);
+  assert.match(pdf.toString("latin1"), /\/MediaBox \[0 0 263\.62 374\.17\]/);
 });
