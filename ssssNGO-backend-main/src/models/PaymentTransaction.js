@@ -41,7 +41,7 @@ const paymentTransactionSchema = new mongoose.Schema(
     verifiedAt: { type: Date, default: null },
     proofFile: { type: String, default: "" },
     proofDocument: { type: mongoose.Schema.Types.Mixed, default: null },
-    paymentReference: { type: String, default: null, index: true },
+    paymentReference: { type: String, default: null },
     paymentAccessTokenHash: { type: String, default: "" },
     configurationVersion: { type: Number, default: null },
     upiSnapshot: {

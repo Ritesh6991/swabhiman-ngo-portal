@@ -60,7 +60,7 @@ router.post("/:id/approve", async (req, res) => {
       transaction = await PaymentTransaction.findOneAndUpdate(
         { _id: transaction._id, status: "pending" },
         { $set: { status: "verified", verifiedAt: new Date(), reviewedAt: new Date(), reviewedBy: req.user.id, rejectionReason: "" } },
-        { new: true }
+        { returnDocument: "after" }
       ) || await PaymentTransaction.findById(transaction._id);
     }
     if (transaction.purpose === "membership" && transaction.fulfillmentStatus !== "complete") {
@@ -81,7 +81,7 @@ router.post("/:id/reject", async (req, res) => {
   const transaction = await PaymentTransaction.findOneAndUpdate(
     { _id: req.params.id, verificationType: "manual", status: "pending" },
     { $set: { status: "rejected", rejectionReason: reason, reviewedAt: new Date(), reviewedBy: req.user.id } },
-    { new: true }
+    { returnDocument: "after" }
   );
   if (!transaction) return res.status(409).json({ message: "Pending payment not found." });
   if (transaction.purpose === "membership") {

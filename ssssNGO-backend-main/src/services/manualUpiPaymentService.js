@@ -189,7 +189,7 @@ const submitUpiProof = async ({ transactionId, purpose, userId, accessToken, fil
         paymentDate: paidAt,
         transactionReference: reference,
       } },
-      { new: true }
+      { returnDocument: "after" }
     );
     if (!updated) {
       await destroyPaymentProof(proofDocument);

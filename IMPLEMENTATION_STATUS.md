@@ -23,7 +23,7 @@ Last verified: 2026-10-03
 | Security review | COMPLETE | Helmet, CORS allowlist, rate limits, fresh-user authorization, upload constraints, safer auth responses and signed payment verification were added. |
 | Data-model review | COMPLETE | Existing user/request/post models were preserved and extended; separate payment, reset-token and delivery-log models were added. |
 | Provider abstraction | COMPLETE | Provider-specific logic is isolated behind a common adapter/factory, with independent membership and donation selection. |
-| Live external verification | PARTIAL | MongoDB, Cloudinary, CORS, auth and historical Resend deliveries are verified. Payment/UPI remains intentionally disabled pending genuine credentials. |
+| Live external verification | PARTIAL | MongoDB, Cloudinary, CORS, auth and historical Resend deliveries are verified. The bank-verified UPI destination is persisted and exact-amount Membership/Donation QR intents passed isolated production-database verification; a real payment/approval/email round-trip remains pending controlled deployment. |
 | Membership photo integration | COMPLETE | Required application photo remains linked to the membership request; activation now fails explicitly if the submitted photo is missing. |
 | Private membership documents | COMPLETE | Photo/Aadhaar/PAN static exposure is blocked; authenticated Admin preview endpoints and UI are implemented. |
 | Manual UPI payments | COMPLETE | Donation and Membership use versioned backend intents, exact payable amounts, stale-intent rejection, private Cloudinary proof storage and Admin-only approval/rejection. Live use only needs the real UPI ID entered in Admin. |
@@ -57,6 +57,6 @@ Last verified: 2026-10-03
 
 - Membership Razorpay public/secret/webhook keys and registered webhook URL.
 - Donation gateway public/secret/webhook keys and registered webhook URL (may be a separate account/provider).
-- The real organisation UPI ID must be saved through Admin → Payment Settings. Gateway credentials are intentionally absent and both gateway toggles remain disabled.
+- The bank-verified organisation UPI destination is saved through Admin Payment Settings. Gateway credentials are intentionally absent and both gateway toggles remain disabled.
 - Accountant/client confirmation of final membership tax rate and receipt wording.
 - The separate approved Admit Card design required to implement its generator and email delivery.

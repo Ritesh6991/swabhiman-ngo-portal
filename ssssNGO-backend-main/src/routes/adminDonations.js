@@ -31,7 +31,7 @@ router.post("/:id/approve", async (req, res) => {
     let donation = await PaymentTransaction.findOneAndUpdate(
       { _id: req.params.id, purpose: "donation", verificationType: "manual", status: "pending", $or: [{ "proofDocument.publicId": { $type: "string", $ne: "" } }, { proofFile: { $type: "string", $ne: "" } }] },
       { $set: { status: "verified", verifiedAt: new Date(), reviewedAt: new Date(), reviewedBy: req.user.id, rejectionReason: "" } },
-      { new: true }
+      { returnDocument: "after" }
     );
     if (!donation) donation = await PaymentTransaction.findOne({ _id: req.params.id, purpose: "donation" });
     if (!donation) return res.status(404).json({ message: "Donation not found" });
@@ -50,7 +50,7 @@ router.post("/:id/reject", async (req, res) => {
   const donation = await PaymentTransaction.findOneAndUpdate(
     { _id: req.params.id, purpose: "donation", verificationType: "manual", status: "pending" },
     { $set: { status: "rejected", rejectionReason: reason, reviewedAt: new Date(), reviewedBy: req.user.id } },
-    { new: true }
+    { returnDocument: "after" }
   );
   if (!donation) return res.status(409).json({ message: "Pending donation not found" });
   res.json({ success: true, donation });

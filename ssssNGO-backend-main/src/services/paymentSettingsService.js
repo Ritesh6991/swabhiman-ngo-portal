@@ -48,7 +48,7 @@ const getPaymentSettings = async () => {
   const created = await AppSetting.findOneAndUpdate(
     { key: settingKey },
     { $setOnInsert: { value: defaults() } },
-    { upsert: true, new: true, setDefaultsOnInsert: true }
+    { upsert: true, returnDocument: "after", setDefaultsOnInsert: true }
   ).lean();
   return publicSettings(created.value);
 };
@@ -101,7 +101,7 @@ const updatePaymentSettings = async ({ input, changedBy }) => {
     .map((setting) => ({ setting, oldValue: at(current, setting), newValue: at(next, setting) }));
   if (!changes.length) return current;
   next.version = current.version + 1;
-  await AppSetting.findOneAndUpdate({ key: settingKey }, { $set: { value: next } }, { upsert: true, new: true });
+  await AppSetting.findOneAndUpdate({ key: settingKey }, { $set: { value: next } }, { upsert: true, returnDocument: "after" });
   await PaymentSettingAudit.create({ changedBy, changes });
   return next;
 };

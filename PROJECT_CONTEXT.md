@@ -65,7 +65,7 @@
 - Separate membership/donation provider keys and webhook secrets.
 - Resend or SMTP credentials and a verified sender.
 - Approved tax rates/settings from the organisation's accountant/legal adviser.
-- Organisation UPI ID remains pending and must be entered in Admin → Payment Settings before UPI is enabled. Gateway credentials remain unavailable and both gateway toggles must stay disabled. The registered office address is `T-135, G.F, Rajpura Gurmandi, Rana Pratap Bagh, North Delhi - 07`.
+- The bank-verified organisation UPI destination and beneficiary name are persisted through Admin Payment Settings, with Membership and Donation UPI enabled. Gateway credentials remain unavailable and both gateway toggles stay disabled. The registered office address is `T-135, G.F, Rajpura Gurmandi, Rana Pratap Bagh, North Delhi - 07`.
 - An explicitly promoted `owner` account for access to Private Nyas Accounts.
 - The approved Admit Card design asset/specification before final generator, PDF and email-delivery integration.
 
