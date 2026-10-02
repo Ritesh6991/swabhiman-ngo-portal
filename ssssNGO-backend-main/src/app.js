@@ -9,15 +9,15 @@ const adminRoutes = require("./routes/admin");
 
 const app = express();
 
-// Render places the real client address first in X-Forwarded-For and may retain
-// values supplied upstream after it. On Render, keep only that trusted first
-// value, then trust exactly the single Render hop in front of this service.
-// This prevents clients from rotating a spoofed suffix to evade IP rate limits.
+// Public Render traffic reaches the service through Cloudflare and Render's
+// single internal proxy hop. Use Cloudflare's edge-generated client address and
+// discard any caller-supplied forwarding chain. If that edge header is absent,
+// fail closed to the proxy socket address instead of trusting spoofable input.
 app.use((req, _res, next) => {
-  if (process.env.RENDER === "true" && req.headers["x-forwarded-for"]) {
-    req.headers["x-forwarded-for"] = String(req.headers["x-forwarded-for"])
-      .split(",")[0]
-      .trim();
+  if (process.env.RENDER === "true") {
+    const edgeClientIp = String(req.headers["cf-connecting-ip"] || "").trim();
+    if (edgeClientIp) req.headers["x-forwarded-for"] = edgeClientIp;
+    else delete req.headers["x-forwarded-for"];
   }
   next();
 });

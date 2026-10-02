@@ -14,7 +14,7 @@ const withServer = async (callback) => {
   }
 };
 
-test("uses Render's first forwarded address and trusts only the nearest proxy hop", async () => {
+test("uses the Render edge client address and trusts only the nearest proxy hop", async () => {
   assert.equal(app.get("trust proxy"), 1);
 
   const route = `/__test/client-ip-${process.pid}`;
@@ -22,7 +22,10 @@ test("uses Render's first forwarded address and trusts only the nearest proxy ho
 
   await withServer(async (baseUrl) => {
     const response = await fetch(`${baseUrl}${route}`, {
-      headers: { "X-Forwarded-For": "198.51.100.19, 203.0.113.27" },
+      headers: {
+        "CF-Connecting-IP": "198.51.100.19",
+        "X-Forwarded-For": "203.0.113.27, 203.0.113.28",
+      },
     });
 
     assert.equal(response.status, 200);
@@ -30,14 +33,15 @@ test("uses Render's first forwarded address and trusts only the nearest proxy ho
   });
 });
 
-test("rate limiting uses forwarded client IPs without merging distinct clients", async () => {
+test("rate limiting ignores spoofed forwarding chains and separates edge clients", async () => {
   await withServer(async (baseUrl) => {
     const endpoint = `${baseUrl}/api/auth/register`;
     const request = (clientIp, spoofedSuffix) => fetch(endpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-Forwarded-For": `${clientIp}, ${spoofedSuffix}`,
+        "CF-Connecting-IP": clientIp,
+        "X-Forwarded-For": spoofedSuffix,
       },
       body: "{}",
     });
@@ -53,5 +57,19 @@ test("rate limiting uses forwarded client IPs without merging distinct clients",
 
     const differentClient = await request("203.0.113.42", "198.51.100.250");
     assert.equal(differentClient.status, 400);
+  });
+});
+
+test("Render requests without an edge client address ignore X-Forwarded-For", async () => {
+  const route = `/__test/client-ip-fallback-${process.pid}`;
+  app.get(route, (req, res) => res.json({ ip: req.ip }));
+
+  await withServer(async (baseUrl) => {
+    const response = await fetch(`${baseUrl}${route}`, {
+      headers: { "X-Forwarded-For": "198.51.100.99" },
+    });
+    const { ip } = await response.json();
+
+    assert.match(ip, /127\.0\.0\.1$/);
   });
 });
