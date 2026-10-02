@@ -5,6 +5,7 @@ const admin = require("../middleware/admin");
 const PaymentTransaction = require("../models/PaymentTransaction");
 const { issueDonationReceipt, deliverDonationReceipt, ensureDonationReceiptFile } = require("../services/donationReceiptService");
 const { sendPrivateFile } = require("../utils/privateFiles");
+const { sendPaymentProof } = require("../services/paymentProofStorage");
 
 const router = express.Router();
 router.use(auth, admin);
@@ -14,20 +15,21 @@ router.get("/", async (req, res) => {
   if (req.query.status) query.status = req.query.status;
   const donations = await PaymentTransaction.find(query)
     .sort({ createdAt: -1 }).limit(300)
-    .select("donor provider verificationType currency baseAmount totalAmount status proofFile paymentDate paymentMethod transactionReference donorNote reviewedBy reviewedAt rejectionReason receiptNumber receiptPath receiptIssuedAt receiptDeliveryStatus receiptDeliveryAttempts receiptDeliveryError createdAt verifiedAt");
+    .select("donor provider verificationType currency baseAmount totalAmount status proofFile proofDocument paymentReference paymentDate paymentMethod transactionReference donorNote reviewedBy reviewedAt rejectionReason receiptNumber receiptPath receiptIssuedAt receiptDeliveryStatus receiptDeliveryAttempts receiptDeliveryError createdAt verifiedAt");
   res.json(donations);
 });
 
 router.get("/:id/proof", async (req, res) => {
   const donation = await PaymentTransaction.findOne({ _id: req.params.id, purpose: "donation", verificationType: "manual" });
   if (!donation) return res.status(404).json({ message: "Donation not found" });
+  if (donation.proofDocument?.publicId) return sendPaymentProof(res, donation.proofDocument);
   return sendPrivateFile(res, path.resolve("uploads", "private", "donations"), donation.proofFile);
 });
 
 router.post("/:id/approve", async (req, res) => {
   try {
     let donation = await PaymentTransaction.findOneAndUpdate(
-      { _id: req.params.id, purpose: "donation", verificationType: "manual", status: "pending" },
+      { _id: req.params.id, purpose: "donation", verificationType: "manual", status: "pending", $or: [{ "proofDocument.publicId": { $type: "string", $ne: "" } }, { proofFile: { $type: "string", $ne: "" } }] },
       { $set: { status: "verified", verifiedAt: new Date(), reviewedAt: new Date(), reviewedBy: req.user.id, rejectionReason: "" } },
       { new: true }
     );
@@ -44,6 +46,7 @@ router.post("/:id/approve", async (req, res) => {
 
 router.post("/:id/reject", async (req, res) => {
   const reason = String(req.body.reason || "").trim().slice(0, 500);
+  if (reason.length < 3) return res.status(400).json({ message: "Enter a rejection reason." });
   const donation = await PaymentTransaction.findOneAndUpdate(
     { _id: req.params.id, purpose: "donation", verificationType: "manual", status: "pending" },
     { $set: { status: "rejected", rejectionReason: reason, reviewedAt: new Date(), reviewedBy: req.user.id } },

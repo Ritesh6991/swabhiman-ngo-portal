@@ -11,6 +11,11 @@ const loadRazorpay = () => new Promise((resolve, reject) => {
 
 export const createMembershipPayment = (membershipRequestId) => API.post("/payments/membership/create", { membershipRequestId });
 export const createDonationPayment = (data, idempotencyKey) => API.post("/payments/donation/create", data, { headers: { "Idempotency-Key": idempotencyKey } });
+export const getPublicPaymentConfig = () => API.get("/payments/public-config");
+export const createDonationUpiIntent = (data) => API.post("/donations/upi-intent", data);
+export const submitDonationUpiProof = (intent, data) => { const form = new FormData(); Object.entries(data).forEach(([key, value]) => form.append(key, value)); return API.post(`/donations/${intent.id}/proof`, form, { headers: { "X-Payment-Token": intent.accessToken } }); };
+export const createMembershipUpiIntent = (membershipRequestId) => API.post("/payments/membership/upi-intent", { membershipRequestId });
+export const submitMembershipUpiProof = (intent, data) => { const form = new FormData(); Object.entries(data).forEach(([key, value]) => form.append(key, value)); return API.post(`/payments/membership/${intent.id}/proof`, form); };
 
 export const openPaymentCheckout = async ({ transaction, payer, onSuccess, onDismiss }) => {
   if (transaction.provider !== "razorpay" || !transaction.checkout) throw new Error("Online payment is not configured yet.");

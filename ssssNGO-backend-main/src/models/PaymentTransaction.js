@@ -40,6 +40,14 @@ const paymentTransactionSchema = new mongoose.Schema(
     failureReason: { type: String, default: "" },
     verifiedAt: { type: Date, default: null },
     proofFile: { type: String, default: "" },
+    proofDocument: { type: mongoose.Schema.Types.Mixed, default: null },
+    paymentReference: { type: String, default: null, index: true },
+    paymentAccessTokenHash: { type: String, default: "" },
+    configurationVersion: { type: Number, default: null },
+    upiSnapshot: {
+      upiId: { type: String, default: "" },
+      payeeName: { type: String, default: "" },
+    },
     paymentDate: { type: Date, default: null },
     paymentMethod: { type: String, trim: true, default: "" },
     transactionReference: { type: String, trim: true, default: "" },
@@ -70,6 +78,11 @@ paymentTransactionSchema.index(
 paymentTransactionSchema.index(
   { receiptNumber: 1 },
   { unique: true, partialFilterExpression: { receiptNumber: { $type: "string" } } }
+);
+
+paymentTransactionSchema.index(
+  { paymentReference: 1 },
+  { unique: true, partialFilterExpression: { paymentReference: { $type: "string" } } }
 );
 
 module.exports = mongoose.model("PaymentTransaction", paymentTransactionSchema);

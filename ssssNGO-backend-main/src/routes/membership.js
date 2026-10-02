@@ -6,6 +6,7 @@ const MembershipRequest = require("../models/MembershipRequest");
 const User = require("../models/User");
 const sendMail = require("../utils/sendMail");
 const fs = require("fs");
+const { membershipAmountForType } = require("../services/manualUpiPaymentService");
 
 const removeUploadedFiles = (files) => Object.values(files || {}).flat().forEach((file) => fs.rmSync(file.path, { force: true }));
 
@@ -31,9 +32,7 @@ router.post(
       if (!["yearly", "permanent"].includes(membershipType)) {
         return res.status(400).json({ message: "Please select a valid membership type" });
       }
-      const amount = membershipType === "permanent"
-        ? Number(process.env.MEMBERSHIP_PERMANENT_AMOUNT || 5100)
-        : Number(process.env.MEMBERSHIP_YEARLY_AMOUNT || 1100);
+      const amount = membershipAmountForType(membershipType);
 
       const existingRequest = await MembershipRequest.findOne({ userId: req.user.id, status: { $ne: "rejected" } });
       if (existingRequest) {

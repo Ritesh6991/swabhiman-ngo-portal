@@ -6,6 +6,7 @@ const { getPaymentConfig, calculateTax } = require("../config/paymentConfig");
 const { createProvider } = require("../payments/providerFactory");
 const { activateMembership } = require("./membershipActivationService");
 const { issueDonationReceipt } = require("./donationReceiptService");
+const { getPurposePaymentSettings } = require("./paymentSettingsService");
 
 const toPaise = (rupees) => Math.round(Number(rupees) * 100);
 
@@ -72,7 +73,11 @@ async function createMembershipPayment({ userId, membershipRequestId }) {
     throw error;
   }
 
-  const config = getPaymentConfig().membership;
+  const runtime = await getPurposePaymentSettings("membership");
+  if (!runtime.gatewayEnabled || !runtime.credentialsConfigured) {
+    throw Object.assign(new Error("Payment gateway is currently unavailable. Use an enabled payment method."), { status: 503 });
+  }
+  const config = { ...getPaymentConfig().membership, provider: runtime.provider };
   const baseAmount = request.membershipType === "permanent"
     ? config.permanentAmount
     : config.yearlyAmount;
@@ -109,7 +114,11 @@ async function createMembershipPayment({ userId, membershipRequestId }) {
 }
 
 async function createDonationPayment({ name, email, phone, amount, idempotencyKey }) {
-  const config = getPaymentConfig().donation;
+  const runtime = await getPurposePaymentSettings("donation");
+  if (!runtime.gatewayEnabled || !runtime.credentialsConfigured) {
+    throw Object.assign(new Error("Payment gateway is currently unavailable. Use an enabled payment method."), { status: 503 });
+  }
+  const config = { ...getPaymentConfig().donation, provider: runtime.provider };
   const baseAmount = Number(amount);
   if (!Number.isFinite(baseAmount) || baseAmount < config.minimumAmount) {
     const error = new Error(`Minimum donation amount is INR ${config.minimumAmount}`);
@@ -163,7 +172,7 @@ async function verifyClientPayment({ purpose, transactionId, orderId, paymentId,
     error.status = 404;
     throw error;
   }
-  const config = getPaymentConfig()[purpose];
+  const config = { ...getPaymentConfig()[purpose], provider: transaction.provider };
   const provider = createProvider(config);
   if (!provider.verifyClientPayment({ orderId, paymentId, signature })) {
     const error = new Error("Invalid payment signature");

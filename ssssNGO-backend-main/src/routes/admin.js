@@ -8,6 +8,7 @@ const Post = require("../models/Post");
 const PaymentTransaction = require("../models/PaymentTransaction");
 const DeliveryLog = require("../models/DeliveryLog");
 const { getPaymentConfig } = require("../config/paymentConfig");
+const { getPaymentSettings, gatewayCredentialsConfigured } = require("../services/paymentSettingsService");
 const { activateMembership, deliverMembershipDocuments } = require("../services/membershipActivationService");
 const { confirmManualMembershipPayment } = require("../services/manualMembershipPaymentService");
 const path = require("path");
@@ -86,6 +87,19 @@ router.post("/approve/:id", auth, admin, async (req, res) => {
       status: "verified",
     });
     if (!transaction) {
+      const upiAttempt = await PaymentTransaction.findOne({
+        membershipRequestId: request._id,
+        purpose: "membership",
+        provider: "manual_upi",
+        status: { $in: ["created", "pending"] },
+      }).sort({ createdAt: -1 });
+      if (upiAttempt) {
+        return res.status(409).json({
+          message: upiAttempt.status === "created"
+            ? "The applicant has not submitted payment proof yet."
+            : "Review and approve the submitted UPI proof in Payments & Delivery.",
+        });
+      }
       transaction = await confirmManualMembershipPayment({
         request,
         adminId: req.user.id,
@@ -112,24 +126,30 @@ router.get("/payments", auth, admin, async (_req, res) => {
   res.json(payments);
 });
 
-router.get("/payment-config", auth, admin, (_req, res) => {
+router.get("/payment-config", auth, admin, async (_req, res) => {
   const config = getPaymentConfig();
+  const settings = await getPaymentSettings();
   res.json({
     membership: {
-      provider: config.membership.provider,
+      provider: settings.membership.provider,
+      gatewayEnabled: settings.membership.gatewayEnabled,
+      upiEnabled: settings.upi.enabled && settings.upi.membershipEnabled,
       currency: config.membership.currency,
       tax: config.membership.tax,
       yearlyAmount: config.membership.yearlyAmount,
       permanentAmount: config.membership.permanentAmount,
-      credentialsConfigured: Boolean(config.membership.publicKey && config.membership.secretKey),
+      credentialsConfigured: gatewayCredentialsConfigured("membership", settings.membership.provider),
     },
     donation: {
-      provider: config.donation.provider,
+      provider: settings.donation.provider,
+      gatewayEnabled: settings.donation.gatewayEnabled,
+      upiEnabled: settings.upi.enabled && settings.upi.donationEnabled,
       currency: config.donation.currency,
       tax: config.donation.tax,
       minimumAmount: config.donation.minimumAmount,
-      credentialsConfigured: Boolean(config.donation.publicKey && config.donation.secretKey),
+      credentialsConfigured: gatewayCredentialsConfigured("donation", settings.donation.provider),
     },
+    upi: settings.upi,
   });
 });
 

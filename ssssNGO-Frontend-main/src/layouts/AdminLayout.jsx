@@ -6,7 +6,7 @@ import logo from "../assets/logo.png";
 
 const groups = [
   { label: "Overview", items: [["/admin", "Dashboard", LayoutDashboard, true]] },
-  { label: "Membership", items: [["/admin/requests", "Applications", UserRoundCheck], ["/admin/members", "Members", UsersRound], ["/admin/payments", "Payments & Delivery", CreditCard]] },
+  { label: "Membership", items: [["/admin/requests", "Applications", UserRoundCheck], ["/admin/members", "Members", UsersRound], ["/admin/payments", "Payment Settings", CreditCard]] },
   { label: "Donations", items: [["/admin/donations", "Verification", HandCoins]] },
   { label: "Examination", items: [["/admin/exams", "Exam Dashboard", CalendarCog, true], ["/admin/exams/registrations", "Registrations", ClipboardList], ["/admin/exams/admit-cards", "Admit Cards", FileBadge2], ["/admin/exams/settings", "Exam Settings", CalendarCog], ["/admin/announcements", "Announcements", Megaphone]] },
   { label: "Content", items: [["/admin/sangathan", "Sangathan", Building2], ["/admin/upload", "Upload Post", FilePlus2], ["/admin/posts", "Manage Posts", Newspaper]] },

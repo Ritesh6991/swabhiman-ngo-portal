@@ -61,6 +61,10 @@ services:
         value: swabhiman/private/exams/documents
       - key: EXAM_ADMIT_CARD_FOLDER
         value: swabhiman/private/exams/admit-cards
+      - key: MEMBERSHIP_PAYMENT_PROOF_FOLDER
+        value: swabhiman/private/payments/membership
+      - key: DONATION_PAYMENT_PROOF_FOLDER
+        value: swabhiman/private/payments/donation
 
   - type: web
     name: swabhiman-ngo-portal-ritesh

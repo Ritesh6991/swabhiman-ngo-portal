@@ -3,7 +3,14 @@ import API from "../services/api";
 import Country from "country-state-city/lib/country";
 import State from "country-state-city/lib/state";
 import { useState, useEffect } from "react";
-import { createMembershipPayment, openPaymentCheckout } from "../services/paymentService";
+import UpiPaymentStep from "../components/UpiPaymentStep";
+import {
+  createMembershipPayment,
+  createMembershipUpiIntent,
+  getPublicPaymentConfig,
+  openPaymentCheckout,
+  submitMembershipUpiProof,
+} from "../services/paymentService";
 
 const MembershipRequest = () => {
   const [form, setForm] = useState({
@@ -42,6 +49,12 @@ const [preview, setPreview] = useState(null);
   const [message, setMessage] = useState("");
   const [cities, setCities] = useState([]);
   const [citiesLoading, setCitiesLoading] = useState(false);
+  const [paymentConfig, setPaymentConfig] = useState(null);
+  const [paymentIntent, setPaymentIntent] = useState(null);
+
+  useEffect(() => {
+    getPublicPaymentConfig().then(({ data }) => setPaymentConfig(data)).catch(() => setMessage("Payment availability could not be loaded. Please try again."));
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -121,13 +134,20 @@ useEffect(() => {
       });
       setMessage("Application saved. Preparing secure payment...");
       try {
-        const payment = await createMembershipPayment(response.data.request._id);
-        await openPaymentCheckout({
-          transaction: payment.data,
-          payer: { name: form.name, email: form.email, contact: form.phone },
-          onSuccess: () => setMessage("Payment verified. Your membership documents are being prepared and emailed to you."),
-          onDismiss: () => setMessage("Payment was cancelled. Your application is saved and can be resumed."),
-        });
+        if (paymentConfig?.upi?.membershipEnabled) {
+          const { data: intent } = await createMembershipUpiIntent(response.data.request._id);
+          setPaymentIntent(intent);
+        } else if (paymentConfig?.membership?.gatewayEnabled) {
+          const payment = await createMembershipPayment(response.data.request._id);
+          await openPaymentCheckout({
+            transaction: payment.data,
+            payer: { name: form.name, email: form.email, contact: form.phone },
+            onSuccess: () => setMessage("Payment verified. Your membership documents are being prepared and emailed to you."),
+            onDismiss: () => setMessage("Payment was cancelled. Your application is saved and can be resumed."),
+          });
+        } else {
+          setMessage("Application saved. Online payment is currently unavailable. Please contact the organisation.");
+        }
       } catch (paymentError) {
         setMessage(paymentError.response?.data?.message || paymentError.message || "Application saved, but online payment is not configured.");
       }
@@ -138,6 +158,19 @@ useEffect(() => {
       setLoading(false);
     }
   };
+
+  if (paymentIntent) {
+    const plan = form.membershipType === "permanent" ? "Permanent Membership" : "Yearly Membership";
+    return <UpiPaymentStep
+      intent={paymentIntent}
+      title="Membership Payment"
+      description={`Complete payment for ${plan}. Your membership will activate only after Admin verification.`}
+      details={[["Membership Plan", plan], ["Membership Fee", `₹${Number(paymentIntent.amount).toLocaleString("en-IN")}`], ["Applicant", form.name]]}
+      onSubmit={(proofData) => submitMembershipUpiProof(paymentIntent, proofData)}
+    />;
+  }
+
+  const paymentAvailable = Boolean(paymentConfig?.upi?.membershipEnabled || paymentConfig?.membership?.gatewayEnabled);
 
   return (
     <div className="max-w-5xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
@@ -164,8 +197,8 @@ useEffect(() => {
         <Section title="Membership Type">
           <Select name="membershipType" onChange={handleChange} required>
             <option value="">Select Membership</option>
-            <option value="yearly">Yearly - ₹1100</option>
-            <option value="permanent">Permanent - ₹5100</option>
+            <option value="yearly">Yearly - ₹{Number(paymentConfig?.membership?.yearlyAmount || 1100).toLocaleString("en-IN")}</option>
+            <option value="permanent">Permanent - ₹{Number(paymentConfig?.membership?.permanentAmount || 5100).toLocaleString("en-IN")}</option>
           </Select>
         </Section>
 
@@ -348,11 +381,16 @@ useEffect(() => {
 </Section>
 
         {/* BUTTON */}
+        {paymentConfig && !paymentAvailable && (
+          <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-center text-sm text-amber-900">
+            Online payment is currently unavailable. Please contact the organisation.
+          </p>
+        )}
         <button
-          disabled={loading}
+          disabled={loading || !paymentConfig || !paymentAvailable}
           className="w-full bg-[#296374] text-white py-3 rounded-lg font-semibold"
         >
-          {loading ? "Submitting..." : "Submit Request"}
+          {loading ? "Submitting..." : !paymentConfig ? "Loading payment options..." : "Submit Request"}
         </button>
 
         {message && (

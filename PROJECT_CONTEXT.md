@@ -5,7 +5,7 @@
 - Frontend: React 19, Vite 7, React Router 7, Tailwind CSS 3, Axios.
 - Backend: Node.js, Express 5, MongoDB/Mongoose 9, JWT bearer authentication.
 - Existing domain: users, membership requests, posts, admin approval, PDF documents, Resend email.
-- Storage: local upload folders for membership documents and generated PDFs; Cloudinary for post media.
+- Storage: local upload folders for membership documents and generated PDFs; Cloudinary for post media, examination identity documents, and authenticated private UPI payment proofs.
 - No pre-existing migrations, queues, payment provider, automated tests, or background worker.
 
 ## Important Modules
@@ -34,6 +34,9 @@
 - Password reset tokens are random, stored only as SHA-256 hashes, expire after 30 minutes, and are single use.
 - Membership uploads are private; Admin document viewing uses authenticated endpoints rather than static URLs.
 - Manual QR donations reuse `PaymentTransaction` with `verificationType=manual`, remain pending until Admin review, and use deterministic receipt identities for idempotent approval/retry.
+- Manual UPI configuration is database-backed and Owner/Admin-controlled. A versioned UPI/payee snapshot binds each exact-amount QR to its original destination, and settings changes are audit logged.
+- Donation amounts are donor-selected but server-validated; membership fees remain server-authoritative. Neither flow adds fees or fulfils before Admin proof approval.
+- Payment-proof images are signature-checked and stored as Cloudinary `authenticated` assets in purpose-specific membership/donation folders. Only authenticated Admin/Owner retrieval endpoints stream them with `no-store` headers.
 - Gateway and manual donations share one receipt service and ledger without activating membership.
 - Private expenses use the dedicated `Expense` model and owner-only server middleware; edits retain previous values in history and exports are labelled expense reports.
 
@@ -62,7 +65,7 @@
 - Separate membership/donation provider keys and webhook secrets.
 - Resend or SMTP credentials and a verified sender.
 - Approved tax rates/settings from the organisation's accountant/legal adviser.
-- Organisation UPI ID and payment-provider credentials remain pending; payment and UPI features must stay disabled until real credentials are supplied. The registered office address is `T-135, G.F, Rajpura Gurmandi, Rana Pratap Bagh, North Delhi - 07`.
+- Organisation UPI ID remains pending and must be entered in Admin → Payment Settings before UPI is enabled. Gateway credentials remain unavailable and both gateway toggles must stay disabled. The registered office address is `T-135, G.F, Rajpura Gurmandi, Rana Pratap Bagh, North Delhi - 07`.
 - An explicitly promoted `owner` account for access to Private Nyas Accounts.
 - The approved Admit Card design asset/specification before final generator, PDF and email-delivery integration.
 
@@ -70,4 +73,4 @@
 
 - Unit tests cover tax independence and payment signature verification.
 - Frontend build/lint and backend test results are recorded in `IMPLEMENTATION_STATUS.md`.
-- Live gateway, webhook, database migration, and email delivery require external credentials.
+- Live UPI proof/approval, gateway, webhook, database migration, and email delivery require the real organisation UPI ID and/or external credentials.

@@ -66,6 +66,8 @@ app.use("/api/member", require("./routes/member"));
 app.use("/api/membership", require("./routes/membership"));
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/admin/payment-settings", require("./routes/paymentSettings"));
+app.use("/api/admin/payment-transactions", require("./routes/adminPayments"));
 app.use("/api/posts", require("./routes/post"));
 app.use("/api/payments", require("./routes/payments"));
 app.use("/api/donations", require("./routes/donations"));
