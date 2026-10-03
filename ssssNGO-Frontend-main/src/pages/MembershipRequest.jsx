@@ -11,6 +11,7 @@ import {
   openPaymentCheckout,
   submitMembershipUpiProof,
 } from "../services/paymentService";
+import { normalizeOptionalMembershipFields } from "../utils/normalizeMembershipInput";
 
 const MembershipRequest = () => {
   const [form, setForm] = useState({
@@ -101,7 +102,7 @@ useEffect(() => {
     e.preventDefault();
 
     const data = new FormData();
-    const cleanedForm = { ...form };
+    const cleanedForm = normalizeOptionalMembershipFields(form);
 
     if (cleanedForm.maritalStatus !== "married") {
       delete cleanedForm.wifeName;

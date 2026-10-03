@@ -7,6 +7,7 @@ const User = require("../models/User");
 const sendMail = require("../utils/sendMail");
 const fs = require("fs");
 const { membershipAmountForType } = require("../services/manualUpiPaymentService");
+const { normalizeOptionalMembershipFields } = require("../utils/normalizeMembershipInput");
 
 const removeUploadedFiles = (files) => Object.values(files || {}).flat().forEach((file) => fs.rmSync(file.path, { force: true }));
 
@@ -27,7 +28,7 @@ router.post(
   upload.validateMembershipFiles,
   async (req, res) => {
     try {
-      const body = req.body;
+      const body = normalizeOptionalMembershipFields(req.body);
       const membershipType = body.membershipType;
       if (!["yearly", "permanent"].includes(membershipType)) {
         return res.status(400).json({ message: "Please select a valid membership type" });
