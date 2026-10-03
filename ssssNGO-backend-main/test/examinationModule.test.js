@@ -37,6 +37,7 @@ test("examination document validation checks file signatures, not only MIME name
   const disguised = Buffer.from("not-an-image");
   assert.equal(detectExamDocumentContent(png).image, true);
   assert.equal(detectExamDocumentContent(pdf).document, true);
+  assert.equal(detectExamDocumentContent(pdf).image, false);
   assert.deepEqual(detectExamDocumentContent(disguised), { image: false, document: false });
 });
 
@@ -54,9 +55,12 @@ test("approved Admit Card design renders as one correctly sized single-card page
     }),
   };
   const photoBuffer = fs.readFileSync(path.resolve(__dirname, "..", "src", "assets", "logo.png"));
-  const pdf = await generateAdmitCard({ registration, photoBuffer });
+  const signatureBuffer = fs.readFileSync(path.resolve(__dirname, "..", "src", "assets", "logo.png"));
+  const withoutSignature = await generateAdmitCard({ registration, photoBuffer });
+  const pdf = await generateAdmitCard({ registration, photoBuffer, signatureBuffer });
   assert.equal(pdf.subarray(0, 5).toString(), "%PDF-");
   assert.ok(pdf.length > 20_000);
   assert.match(pdf.toString("latin1"), /\/Count 1\b/);
   assert.match(pdf.toString("latin1"), /\/MediaBox \[0 0 263\.62 374\.17\]/);
+  assert.ok(pdf.length > withoutSignature.length, "student signature should be embedded in the Admit Card");
 });

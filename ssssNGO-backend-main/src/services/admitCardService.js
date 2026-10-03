@@ -22,8 +22,11 @@ const generateAndStoreAdmitCard = async (registration) => {
   await registration.save();
 
   try {
-    const photoBuffer = await downloadPrivateDocument(registration.photoFile);
-    const pdf = await generateAdmitCard({ registration, photoBuffer });
+    const [photoBuffer, signatureBuffer] = await Promise.all([
+      downloadPrivateDocument(registration.photoFile),
+      registration.signatureFile?.publicId ? downloadPrivateDocument(registration.signatureFile) : null,
+    ]);
+    const pdf = await generateAdmitCard({ registration, photoBuffer, signatureBuffer });
     const stored = await uploadAdmitCard(pdf, registration.applicationNumber);
     registration.admitCardFile = stored;
     registration.admitCardPath = "";

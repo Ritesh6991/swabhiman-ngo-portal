@@ -29,6 +29,17 @@ const normalizePhoto = async (photoBuffer) => sharp(photoBuffer)
   .jpeg({ quality: 92 })
   .toBuffer();
 
+const normalizeSignature = async (signatureBuffer) => sharp(signatureBuffer)
+  .rotate()
+  .flatten({ background: "#FFFFFF" })
+  // Keep handwritten ink crisp while removing photographed paper/checker backgrounds.
+  .grayscale()
+  .threshold(190)
+  .trim({ background: "#FFFFFF", threshold: 8 })
+  .resize(260, 70, { fit: "contain", background: "#FFFFFF", withoutEnlargement: true })
+  .png()
+  .toBuffer();
+
 const point = (x, y) => ({ x: x * CARD_WIDTH / 1055, y: y * CARD_HEIGHT / 1493 });
 const size = (width, height) => ({ width: width * CARD_WIDTH / 1055, height: height * CARD_HEIGHT / 1493 });
 
@@ -42,7 +53,7 @@ const drawValue = (doc, originX, originY, value, x, y, width, preferred = 8) => 
     });
 };
 
-const drawCard = (doc, { x, y, registration, photo }) => {
+const drawCard = (doc, { x, y, registration, photo, studentSignature }) => {
   const cycle = registration.examCycle;
   doc.image(templatePath, x, y, { width: CARD_WIDTH, height: CARD_HEIGHT });
 
@@ -74,9 +85,17 @@ const drawCard = (doc, { x, y, registration, photo }) => {
   drawValue(doc, x, y, cycle.examDuration, 756, 810, 229, 6.3);
   drawValue(doc, x, y, cycle.examinationCentre, 395, 910, 590, 6.3);
   drawValue(doc, x, y, cycle.examAddress, 266, 1008, 719, 5.9);
+
+  if (studentSignature) {
+    const signaturePosition = point(98, 1205);
+    const signatureSize = size(258, 70);
+    doc.image(studentSignature, x + signaturePosition.x, y + signaturePosition.y, {
+      fit: [signatureSize.width, signatureSize.height], align: "center", valign: "bottom",
+    });
+  }
 };
 
-module.exports = async ({ registration, photoBuffer }) => {
+module.exports = async ({ registration, photoBuffer, signatureBuffer }) => {
   const cycle = registration.examCycle;
   const requiredCycleFields = ["examDuration", "examinationCentre", "examAddress"];
   const missing = requiredCycleFields.filter((field) => !String(cycle?.[field] || "").trim());
@@ -87,6 +106,7 @@ module.exports = async ({ registration, photoBuffer }) => {
   if (!fs.existsSync(templatePath) || !fs.existsSync(devanagariFontPath)) throw new Error("Admit Card design assets are unavailable");
 
   const photo = await normalizePhoto(photoBuffer);
+  const studentSignature = signatureBuffer ? await normalizeSignature(signatureBuffer) : null;
   const chunks = [];
   const doc = new PDFDocument({
     size: [CARD_WIDTH, CARD_HEIGHT],
@@ -100,7 +120,7 @@ module.exports = async ({ registration, photoBuffer }) => {
     doc.on("error", reject);
   });
   doc.registerFont("NotoDevanagari", devanagariFontPath);
-  drawCard(doc, { x: 0, y: 0, registration, photo });
+  drawCard(doc, { x: 0, y: 0, registration, photo, studentSignature });
   doc.end();
   return completed;
 };

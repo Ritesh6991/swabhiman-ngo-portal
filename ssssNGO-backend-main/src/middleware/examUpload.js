@@ -4,14 +4,15 @@ const path = require("path");
 const allowedExtensions = new Set([".jpg", ".jpeg", ".png", ".webp", ".pdf"]);
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024, files: 2, fields: 20 },
+  limits: { fileSize: 5 * 1024 * 1024, files: 3, fields: 20 },
   fileFilter: (_req, file, callback) => {
     const extension = path.extname(file.originalname).toLowerCase();
     const allowedMime = new Set(["image/jpeg", "image/png", "image/webp", "application/pdf"]);
-    const allowed = allowedExtensions.has(extension) && allowedMime.has(file.mimetype) && (file.fieldname !== "photo" || extension !== ".pdf");
+    const imageOnly = file.fieldname === "photo" || file.fieldname === "signature";
+    const allowed = allowedExtensions.has(extension) && allowedMime.has(file.mimetype) && (!imageOnly || extension !== ".pdf");
     callback(allowed ? null : new Error("Unsupported examination document type"), allowed);
   },
-}).fields([{ name: "photo", maxCount: 1 }, { name: "aadhaar", maxCount: 1 }]);
+}).fields([{ name: "photo", maxCount: 1 }, { name: "aadhaar", maxCount: 1 }, { name: "signature", maxCount: 1 }]);
 
 const signature = (buffer) => {
   const header = buffer.subarray(0, 12);
@@ -25,10 +26,11 @@ const examUpload = (req, res, next) => upload(req, res, (error) => {
   if (error) return res.status(400).json({ message: error.message });
   const photo = req.files?.photo?.[0];
   const aadhaar = req.files?.aadhaar?.[0];
-  if (!photo || !aadhaar) {
-    return res.status(400).json({ message: "Student photograph and Aadhaar Card are required" });
+  const studentSignature = req.files?.signature?.[0];
+  if (!photo || !aadhaar || !studentSignature) {
+    return res.status(400).json({ message: "Student photograph, signature and Aadhaar Card are required" });
   }
-  if (!signature(photo.buffer).image || !signature(aadhaar.buffer).document) {
+  if (!signature(photo.buffer).image || !signature(studentSignature.buffer).image || !signature(aadhaar.buffer).document) {
     return res.status(400).json({ message: "Uploaded document content does not match the allowed file type" });
   }
   next();

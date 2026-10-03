@@ -59,7 +59,7 @@ const AdminExamRegistrations = () => {
     );
     if (document) URL.revokeObjectURL(document.url);
     setDocument({
-      title: kind === "photo" ? "Student Photograph" : "Aadhaar Card",
+      title: kind === "photo" ? "Student Photograph" : kind === "signature" ? "Student Signature" : "Aadhaar Card",
       url: URL.createObjectURL(response.data),
       type: response.data.type,
     });
@@ -262,6 +262,12 @@ const AdminExamRegistrations = () => {
                       <Eye size={16} />
                       View Aadhaar
                     </ToolbarButton>
+                    {selected.signatureFile?.publicId && (
+                      <ToolbarButton onClick={() => openDocument("signature")}>
+                        <Eye size={16} />
+                        View Signature
+                      </ToolbarButton>
+                    )}
                   </div>
                 </section>
               </div>

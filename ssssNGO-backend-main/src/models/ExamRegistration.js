@@ -24,6 +24,9 @@ const examRegistrationSchema = new mongoose.Schema({
   email: { type: String, required: true, trim: true, lowercase: true, maxlength: 180 },
   photoFile: { type: storedDocumentSchema, required: true },
   aadhaarFile: { type: storedDocumentSchema, required: true },
+  // Optional at schema level so historical registrations remain readable.
+  // Every new public registration is required to upload a signature.
+  signatureFile: { type: storedDocumentSchema, default: null },
   status: { type: String, enum: ["pending", "approved", "rejected"], default: "pending", index: true },
   adminRemarks: { type: String, trim: true, maxlength: 1000, default: "" },
   reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },

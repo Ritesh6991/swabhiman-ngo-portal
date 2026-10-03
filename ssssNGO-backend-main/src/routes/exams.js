@@ -123,7 +123,8 @@ router.get("/admin/registrations/:id", auth, admin, async (req, res, next) => {
 
 router.get("/admin/registrations/:id/documents/:kind", auth, admin, async (req, res, next) => {
   try {
-    const field = req.params.kind === "photo" ? "photoFile" : req.params.kind === "aadhaar" ? "aadhaarFile" : null;
+    const fields = { photo: "photoFile", aadhaar: "aadhaarFile", signature: "signatureFile" };
+    const field = fields[req.params.kind] || null;
     if (!field) return res.status(404).json({ message: "Document not found" });
     const registration = await ExamRegistration.findById(req.params.id).select(field);
     if (!registration) return res.status(404).json({ message: "Registration not found" });
@@ -240,14 +241,14 @@ router.post("/:slug/registrations", registrationLimiter, requireOpenCycle, examU
     const registration = await ExamRegistration.create({
       ...values, normalizedStudentName: values.studentName.toLowerCase().replace(/\s+/g, " "), examCycle: cycle._id,
       applicationNumber: `ACE-${cycle.year}-${suffix}`,
-      photoFile: storedDocuments.photo, aadhaarFile: storedDocuments.aadhaar,
+      photoFile: storedDocuments.photo, aadhaarFile: storedDocuments.aadhaar, signatureFile: storedDocuments.signature,
     });
     res.status(201).json({
       message: "Registration submitted successfully.", studentName: registration.studentName,
       applicationNumber: registration.applicationNumber, examination: cycle.title, status: "PENDING REVIEW",
     });
   } catch (error) {
-    if (storedDocuments) await removeExamDocuments([storedDocuments.photo, storedDocuments.aadhaar]);
+    if (storedDocuments) await removeExamDocuments([storedDocuments.photo, storedDocuments.aadhaar, storedDocuments.signature]);
     if (error.code === 11000) error = Object.assign(new Error("A registration for this student already exists for this examination"), { status: 409 });
     next(error);
   }

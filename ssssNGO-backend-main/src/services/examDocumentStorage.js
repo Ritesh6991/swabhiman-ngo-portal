@@ -53,7 +53,9 @@ const uploadExamDocuments = async (files) => {
     uploaded.push(photo);
     const aadhaar = await uploadBuffer(files.aadhaar[0]);
     uploaded.push(aadhaar);
-    return { photo, aadhaar };
+    const signature = await uploadBuffer(files.signature[0]);
+    uploaded.push(signature);
+    return { photo, aadhaar, signature };
   } catch (error) {
     await Promise.allSettled(uploaded.map(destroyDocument));
     throw error;
