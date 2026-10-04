@@ -16,11 +16,11 @@ services:
       - key: JWT_SECRET
         sync: false
       - key: FRONTEND_URL
-        value: https://swabhiman-ngo-portal-ritesh.onrender.com
+        value: https://swabhiman-ngo-portal.vercel.app
       - key: PUBLIC_API_URL
         value: https://swabhiman-ngo-api-ritesh.onrender.com
       - key: CORS_ORIGINS
-        value: https://swabhiman-ngo-portal-ritesh.onrender.com,https://swabhiman-ngo-portal.vercel.app
+        value: https://swabhiman-ngo-portal-ritesh.onrender.com,https://swabhiman-ngo-portal.vercel.app,https://swabhimanshikshasanskriti.in,https://www.swabhimanshikshasanskriti.in
       - key: MAIL_PROVIDER
         value: resend
       - key: RESEND_API_KEY
