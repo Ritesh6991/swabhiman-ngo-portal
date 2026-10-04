@@ -14,6 +14,11 @@ const { confirmManualMembershipPayment } = require("../services/manualMembership
 const path = require("path");
 const fs = require("fs");
 const { sendPrivateFile } = require("../utils/privateFiles");
+const mongoose = require("mongoose");
+const LegacyDocumentSubmission = require("../models/LegacyDocumentSubmission");
+const LegacyDocumentAudit = require("../models/LegacyDocumentAudit");
+const { documentState, documentFields } = require("../services/legacyDocumentRecovery");
+const { destroyLegacyDocuments, sendLegacyDocument } = require("../services/legacyDocumentStorage");
 
 // ================= STATS =================
 router.get("/stats", auth, admin, async (req, res) => {
@@ -39,14 +44,16 @@ router.get("/stats", auth, admin, async (req, res) => {
 router.get("/requests", auth, admin, async (req, res) => {
   try {
     const requests = await MembershipRequest.find().sort({ createdAt: -1 });
-    const documentRoot = path.resolve("uploads", "docs");
+    const pending = await LegacyDocumentSubmission.find({
+      membershipRequestId: { $in: requests.map((request) => request._id) }, status: "pending",
+    }).select("membershipRequestId submittedKinds status createdAt");
+    const pendingByRequest = new Map(pending.map((item) => [String(item.membershipRequestId), item]));
     res.json(requests.map((request) => {
       const item = request.toObject();
-      item.documentAvailability = {
-        photo: Boolean(item.photoFile && fs.existsSync(path.join(documentRoot, path.basename(item.photoFile)))),
-        aadhaar: Boolean(item.aadhaarFile && fs.existsSync(path.join(documentRoot, path.basename(item.aadhaarFile)))),
-        pan: Boolean(item.panFile && fs.existsSync(path.join(documentRoot, path.basename(item.panFile)))),
-      };
+      const submission = pendingByRequest.get(String(item._id)) || null;
+      const state = documentState(item, submission);
+      item.documentAvailability = Object.fromEntries(Object.entries(state).map(([kind, value]) => [kind, value.available]));
+      item.documentRecovery = { documents: state, pendingSubmission: submission };
       return item;
     }));
   } catch (err) {
@@ -62,7 +69,70 @@ router.get("/requests/:id/document/:kind", auth, admin, async (req, res) => {
   const request = await MembershipRequest.findById(req.params.id).select(field);
   if (!request) return res.status(404).json({ message: "Application not found" });
   console.info("Admin membership document access", { adminId: req.user.id, requestId: req.params.id, kind: req.params.kind });
-  return sendPrivateFile(res, path.resolve("uploads", "docs"), request[field]);
+  const fullRequest = await MembershipRequest.findById(req.params.id).select(`${field} ${documentFields[req.params.kind]}`);
+  const durable = fullRequest?.[documentFields[req.params.kind]];
+  await LegacyDocumentAudit.create({ membershipRequestId: req.params.id, actorId: req.user.id, actorRole: req.user.role, action: "viewed", documentKinds: [req.params.kind] });
+  if (durable?.publicId) return sendLegacyDocument(res, durable);
+  return sendPrivateFile(res, path.resolve("uploads", "docs"), fullRequest[field]);
+});
+
+router.get("/document-reuploads/:submissionId/document/:kind", auth, admin, async (req, res, next) => {
+  try {
+    if (!["photo", "aadhaar", "pan"].includes(req.params.kind)) return res.status(404).json({ message: "Document not found" });
+    const submission = await LegacyDocumentSubmission.findById(req.params.submissionId);
+    const document = submission?.documents?.[req.params.kind];
+    if (!document?.publicId) return res.status(404).json({ message: "Document not found" });
+    await LegacyDocumentAudit.create({ membershipRequestId: submission.membershipRequestId, submissionId: submission._id, actorId: req.user.id, actorRole: req.user.role, action: "viewed", documentKinds: [req.params.kind] });
+    return sendLegacyDocument(res, document);
+  } catch (error) { next(error); }
+});
+
+router.post("/document-reuploads/:submissionId/verify", auth, admin, async (req, res, next) => {
+  const session = await mongoose.startSession();
+  try {
+    let verified;
+    await session.withTransaction(async () => {
+      const submission = await LegacyDocumentSubmission.findOne({ _id: req.params.submissionId, status: "pending" }).session(session);
+      if (!submission) throw Object.assign(new Error("Pending document submission not found"), { status: 404 });
+      const updates = {};
+      for (const kind of submission.submittedKinds) {
+        if (submission.documents?.[kind]?.publicId) updates[documentFields[kind]] = submission.documents[kind].toObject();
+      }
+      const request = await MembershipRequest.findByIdAndUpdate(submission.membershipRequestId, { $set: updates }, { new: true, session });
+      if (!request) throw Object.assign(new Error("Membership application not found"), { status: 404 });
+      submission.status = "verified";
+      submission.reviewedBy = req.user.id;
+      submission.reviewedAt = new Date();
+      submission.reviewNote = String(req.body?.note || "").trim().slice(0, 500);
+      await submission.save({ session });
+      await LegacyDocumentAudit.create([{
+        membershipRequestId: request._id, submissionId: submission._id, actorId: req.user.id,
+        actorRole: req.user.role, action: "verified", documentKinds: submission.submittedKinds,
+        note: submission.reviewNote,
+      }], { session });
+      verified = { requestId: request._id, membershipStatus: request.status, memberId: request.memberId, kinds: submission.submittedKinds };
+    });
+    res.json({ success: true, verified });
+  } catch (error) { next(error); } finally { await session.endSession(); }
+});
+
+router.post("/document-reuploads/:submissionId/reject", auth, admin, async (req, res, next) => {
+  try {
+    const submission = await LegacyDocumentSubmission.findOne({ _id: req.params.submissionId, status: "pending" });
+    if (!submission) return res.status(404).json({ message: "Pending document submission not found" });
+    const note = String(req.body?.note || "").trim().slice(0, 500);
+    if (note.length < 3) return res.status(400).json({ message: "Provide a short rejection reason for the member" });
+    await destroyLegacyDocuments(submission.submittedKinds.map((kind) => submission.documents?.[kind]).filter(Boolean));
+    submission.status = "rejected";
+    submission.reviewedBy = req.user.id;
+    submission.reviewedAt = new Date();
+    submission.reviewNote = note;
+    submission.deletedAt = new Date();
+    submission.documents = { photo: null, aadhaar: null, pan: null };
+    await submission.save();
+    await LegacyDocumentAudit.create({ membershipRequestId: submission.membershipRequestId, submissionId: submission._id, actorId: req.user.id, actorRole: req.user.role, action: "rejected", documentKinds: submission.submittedKinds, note });
+    res.json({ success: true });
+  } catch (error) { next(error); }
 });
 
 // Approval accepts a verified gateway payment or an explicit, auditable admin confirmation.

@@ -1,5 +1,16 @@
 const mongoose = require("mongoose");
 
+const storedDocumentSchema = new mongoose.Schema({
+  assetId: { type: String, default: "" },
+  publicId: { type: String, required: true },
+  format: { type: String, required: true },
+  resourceType: { type: String, default: "image" },
+  deliveryType: { type: String, default: "authenticated" },
+  mimeType: { type: String, required: true },
+  originalName: { type: String, default: "document" },
+  bytes: { type: Number, default: 0 },
+}, { _id: false });
+
 const membershipSchema = new mongoose.Schema(
   {
     userId: {
@@ -173,6 +184,12 @@ const membershipSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+
+    // Durable, admin-verified replacements for missing legacy files. The
+    // original filename fields above remain unchanged as historical evidence.
+    photoDocument: { type: storedDocumentSchema, default: null },
+    aadhaarDocument: { type: storedDocumentSchema, default: null },
+    panDocument: { type: storedDocumentSchema, default: null },
 
     // ================= ID CARD =================
     memberId: {

@@ -20,7 +20,7 @@ services:
       - key: PUBLIC_API_URL
         value: https://swabhiman-ngo-api-ritesh.onrender.com
       - key: CORS_ORIGINS
-        value: https://swabhiman-ngo-portal-ritesh.onrender.com
+        value: https://swabhiman-ngo-portal-ritesh.onrender.com,https://swabhiman-ngo-portal.vercel.app
       - key: MAIL_PROVIDER
         value: resend
       - key: RESEND_API_KEY
@@ -63,6 +63,8 @@ services:
         value: swabhiman/private/exams/admit-cards
       - key: MEMBERSHIP_PAYMENT_PROOF_FOLDER
         value: swabhiman/private/payments/membership
+      - key: MEMBERSHIP_LEGACY_DOCUMENT_FOLDER
+        value: swabhiman/private/membership/reuploads
       - key: DONATION_PAYMENT_PROOF_FOLDER
         value: swabhiman/private/payments/donation
 
