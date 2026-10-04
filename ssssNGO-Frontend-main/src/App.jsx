@@ -36,6 +36,7 @@ const AdminExamRegistrations = lazy(() => import("./pages/AdminExamRegistrations
 const AdminExamSettings = lazy(() => import("./pages/AdminExamSettings"));
 const AdminAdmitCards = lazy(() => import("./pages/AdminAdmitCards"));
 const AdminAnnouncements = lazy(() => import("./pages/AdminAnnouncements"));
+const MemberDocuments = lazy(() => import("./pages/MemberDocuments"));
 
 const loadingFallback = (
   <div className="flex min-h-screen items-center justify-center bg-slate-50 text-sm font-semibold text-slate-600">
@@ -71,6 +72,7 @@ function App() {
           <Route path="/exam-registration/:slug" element={<ExamRegistration />} />
           <Route path="/members" element={user?.joined ? <MembersDirectory /> : <Login />} />
           <Route path="/join" element={user ? <MembershipRequest /> : <Login />} />
+          <Route path="/my-documents" element={user ? <MemberDocuments /> : <Navigate to="/login" replace />} />
 
           <Route path="/admin" element={hasAdminAccess ? <AdminLayout /> : <Navigate to="/login" replace />}>
             <Route index element={<AdminDashboard />} />

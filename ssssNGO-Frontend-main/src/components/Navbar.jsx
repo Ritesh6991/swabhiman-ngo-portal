@@ -9,6 +9,7 @@ import {
   UserPlus,
   LayoutDashboard,
   Image,
+  FileLock2,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import logo from "../assets/logo.png";
@@ -108,6 +109,7 @@ const Navbar = () => {
 
           {user && (
             <>
+              <NavLink to="/my-documents"><span className="flex items-center gap-1"><FileLock2 size={16} /> My Documents</span></NavLink>
               {!user.joined && (
                 <motion.button
                   whileHover={{ scale: 1.05 }}
@@ -181,6 +183,7 @@ const Navbar = () => {
 
               {user && (
                 <>
+                  <NavLink to="/my-documents">My Documents</NavLink>
                   {!user.joined && (
                     <button
                       onClick={() => {

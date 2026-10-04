@@ -5,13 +5,14 @@ import Loader from "../components/Loader";
 import { Search } from "lucide-react";
 import { EmptyState, PageHeader, StatusBadge } from "../components/admin/AdminUI";
 
-const SecureFileButton = ({ requestId, available, kind, label, onPreview }) => {
+const SecureFileButton = ({ requestId, submissionId, available, kind, label, onPreview }) => {
   const [error, setError] = useState("");
   if (!available) return <span className="text-xs text-slate-400">No {label}</span>;
   const open = async () => {
     try {
       setError("");
-      const response = await API.get(`/admin/requests/${requestId}/document/${kind}`, { responseType: "blob" });
+      const url = submissionId ? `/admin/document-reuploads/${submissionId}/document/${kind}` : `/admin/requests/${requestId}/document/${kind}`;
+      const response = await API.get(url, { responseType: "blob" });
       onPreview({ label, url: URL.createObjectURL(response.data), type: response.headers["content-type"] || response.data.type });
     } catch (requestError) {
       setError(requestError.response?.data?.message || requestError.message || `Unable to open ${label}.`);
@@ -47,11 +48,13 @@ const AdminRequests = () => {
   const [actionError, setActionError] = useState("");
   const [rejectConfirmationOpen, setRejectConfirmationOpen] = useState(false);
   const [manualPayment, setManualPayment] = useState({ paymentMethod: "upi", transactionReference: "", note: "", confirmPayment: false });
+  const [recoveryNote, setRecoveryNote] = useState("");
 
   useEffect(() => {
     setActionError("");
     setRejectConfirmationOpen(false);
     setManualPayment({ paymentMethod: "upi", transactionReference: "", note: "", confirmPayment: false });
+    setRecoveryNote("");
   }, [selected?._id]);
 
   // FETCH REQUESTS
@@ -108,6 +111,22 @@ const AdminRequests = () => {
     } finally {
       setActionLoading(false);
     }
+  };
+
+  const reviewRecovery = async (decision) => {
+    const submissionId = selected?.documentRecovery?.pendingSubmission?._id;
+    if (!submissionId) return;
+    if (decision === "reject" && recoveryNote.trim().length < 3) {
+      setActionError("Add a short reason before rejecting replacement documents.");
+      return;
+    }
+    try {
+      setActionLoading(true); setActionError("");
+      await API.post(`/admin/document-reuploads/${submissionId}/${decision}`, { note: recoveryNote });
+      await fetchRequests(); setSelected(null);
+    } catch (error) {
+      setActionError(error.response?.data?.message || "Document review could not be completed.");
+    } finally { setActionLoading(false); }
   };
 
   const filtered = requests.filter((item) => (status === "all" || item.status === status) && `${item.name || ""} ${item.email || ""}`.toLowerCase().includes(query.toLowerCase()));
@@ -208,6 +227,8 @@ const AdminRequests = () => {
                 <SecureFileButton key={`${selected._id}-aadhaar`} requestId={selected._id} available={selected.documentAvailability?.aadhaar ?? selected.aadhaarFile} kind="aadhaar" label="Aadhaar" onPreview={setPreview} />
                 <SecureFileButton key={`${selected._id}-pan`} requestId={selected._id} available={selected.documentAvailability?.pan ?? selected.panFile} kind="pan" label="PAN" onPreview={setPreview} />
               </div></section>
+
+            {selected.documentRecovery?.pendingSubmission && <section className="mt-6 rounded-xl border border-blue-200 bg-blue-50 p-4"><div className="flex flex-wrap items-center justify-between gap-2"><div><h3 className="font-bold text-[#102A43]">Replacement documents awaiting verification</h3><p className="mt-1 text-xs text-slate-600">Verifying these files will not alter membership, payment or approval history.</p></div><span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold uppercase text-amber-800">Pending review</span></div><div className="mt-4 flex flex-wrap gap-3">{selected.documentRecovery.pendingSubmission.submittedKinds.map((kind) => <SecureFileButton key={`recovery-${kind}`} submissionId={selected.documentRecovery.pendingSubmission._id} available kind={kind} label={`Replacement ${kind}`} onPreview={setPreview} />)}</div><label className="mt-4 block text-sm font-semibold text-slate-700">Review note<textarea value={recoveryNote} onChange={(event) => setRecoveryNote(event.target.value)} rows="2" className="form-input mt-1" placeholder="Required when rejecting; optional when verifying" /></label><div className="mt-4 flex flex-wrap gap-2"><button type="button" disabled={actionLoading} onClick={() => reviewRecovery("verify")} className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-60">Verify replacement documents</button><button type="button" disabled={actionLoading} onClick={() => reviewRecovery("reject")} className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-60">Reject replacement documents</button></div></section>}
 
             {selected.status !== "approved" && selected.paymentStatus !== "verified" && (
               <section className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
