@@ -20,7 +20,7 @@ services:
       - key: PUBLIC_API_URL
         value: https://swabhiman-ngo-api-ritesh.onrender.com
       - key: CORS_ORIGINS
-        value: https://swabhiman-ngo-portal-ritesh.onrender.com,https://swabhiman-ngo-portal.vercel.app,https://swabhimanshikshasanskriti.in,https://www.swabhimanshikshasanskriti.in
+        value: https://swabhiman-ngo-portal-ritesh.onrender.com,https://swabhiman-ngo-portal.vercel.app,https://swabhiman-ngo-portal-2r6vghb75-mmw6.vercel.app,https://swabhimanshikshasanskriti.in,https://www.swabhimanshikshasanskriti.in
       - key: MAIL_PROVIDER
         value: resend
       - key: RESEND_API_KEY
