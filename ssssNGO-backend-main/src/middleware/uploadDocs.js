@@ -1,23 +1,10 @@
 const multer = require("multer");
 const path = require("path");
-const fs = require("fs");
-const crypto = require("crypto");
-
-const uploadDir = path.resolve("uploads", "docs");
-fs.mkdirSync(uploadDir, { recursive: true });
-
-const storage = multer.diskStorage({
-  destination: uploadDir,
-  filename: (req, file, cb) => {
-    const safeName = path.basename(file.originalname).replace(/[^a-zA-Z0-9._-]/g, "-");
-    cb(null, `${Date.now()}-${crypto.randomBytes(8).toString("hex")}-${safeName}`);
-  },
-});
 
 const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp", "application/pdf"]);
 
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024, files: 3 },
   fileFilter: (_req, file, cb) => {
     const extension = path.extname(file.originalname).toLowerCase();
@@ -30,7 +17,7 @@ const upload = multer({
 });
 
 const hasValidSignature = (file) => {
-  const header = fs.readFileSync(file.path).subarray(0, 12);
+  const header = file.buffer.subarray(0, 12);
   const isJpeg = header[0] === 0xff && header[1] === 0xd8 && header[2] === 0xff;
   const isPng = header.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
   const isWebp = header.subarray(0, 4).toString() === "RIFF" && header.subarray(8, 12).toString() === "WEBP";
@@ -50,7 +37,6 @@ upload.validateMembershipFiles = (req, res, next) => {
     }
     next();
   } catch (error) {
-    Object.values(req.files || {}).flat().forEach((file) => fs.rmSync(file.path, { force: true }));
     res.status(400).json({ message: error.message });
   }
 };

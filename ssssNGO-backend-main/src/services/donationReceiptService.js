@@ -3,6 +3,9 @@ const PaymentTransaction = require("../models/PaymentTransaction");
 const generateDonationReceipt = require("../utils/generateDonationReceipt");
 const sendMail = require("../utils/sendMail");
 const escapeHtml = require("../utils/escapeHtml");
+const storage = require("./privateDocumentStorage");
+
+const receiptFolder = process.env.DONATION_RECEIPT_FOLDER || "swabhiman/private/donations/receipts";
 
 const receiptNumberFor = (transaction) => {
   const year = new Date(transaction.verifiedAt || Date.now()).getFullYear();
@@ -14,11 +17,12 @@ async function deliverDonationReceipt(transaction, { force = false } = {}) {
   if (!transaction.donor?.email || (transaction.receiptDeliveryStatus === "sent" && !force)) return transaction;
   transaction.receiptDeliveryAttempts += 1;
   try {
+    const receiptContent = await storage.download(transaction.receiptDocument);
     await sendMail({
       to: transaction.donor.email,
       subject: `Donation receipt ${transaction.receiptNumber}`,
       html: `<p>Dear ${escapeHtml(transaction.donor.name || "Donor")},</p><p>Thank you for your contribution. Your verified donation receipt is attached.</p>`,
-      attachments: [{ filename: `${transaction.receiptNumber}.pdf`, path: transaction.receiptPath }],
+      attachments: [{ filename: `${transaction.receiptNumber}.pdf`, content: receiptContent }],
     });
     transaction.receiptDeliveryStatus = "sent";
     transaction.receiptDeliveryError = "";
@@ -31,10 +35,23 @@ async function deliverDonationReceipt(transaction, { force = false } = {}) {
 }
 
 async function ensureDonationReceiptFile(transaction) {
-  if (!transaction.receiptPath || !fs.existsSync(transaction.receiptPath)) {
-    transaction.receiptPath = await generateDonationReceipt(transaction);
+  if (transaction.receiptDocument?.publicId) return transaction;
+  let filePath = transaction.receiptPath;
+  let generated = false;
+  if (!filePath || !fs.existsSync(filePath)) {
+    filePath = await generateDonationReceipt(transaction);
+    generated = true;
+  }
+  try {
+    transaction.receiptDocument = await storage.uploadFile(filePath, {
+      folder: receiptFolder,
+      originalName: `${transaction.receiptNumber}.pdf`,
+      mimeType: "application/pdf",
+    });
     if (transaction.receiptDeliveryStatus !== "sent") transaction.receiptDeliveryStatus = "generated";
     await transaction.save();
+  } finally {
+    if (generated) await fs.promises.rm(filePath, { force: true });
   }
   return transaction;
 }

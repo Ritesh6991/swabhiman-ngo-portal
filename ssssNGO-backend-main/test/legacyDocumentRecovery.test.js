@@ -35,6 +35,17 @@ test("membership schema preserves original filenames alongside verified private 
   assert.ok(MembershipRequest.schema.path("panDocument"));
 });
 
+test("new membership uploads are kept in memory until authenticated storage accepts them", () => {
+  const upload = require("../src/middleware/uploadDocs");
+  const photo = { buffer: Buffer.from([0xff, 0xd8, 0xff, 0x00]), mimetype: "image/jpeg", originalname: "photo.jpg" };
+  const identity = { buffer: Buffer.from("%PDF-test"), mimetype: "application/pdf", originalname: "identity.pdf" };
+  const req = { files: { photo: [photo], aadhaar: [identity], pan: [identity] } };
+  let nextCalled = false;
+  upload.validateMembershipFiles(req, { status: () => ({ json: () => assert.fail("valid buffers should pass") }) }, () => { nextCalled = true; });
+  assert.equal(nextCalled, true);
+  assert.equal("path" in photo, false);
+});
+
 test("only one pending recovery submission is allowed per membership application", () => {
   const index = LegacyDocumentSubmission.schema.indexes().find(([fields]) => fields.membershipRequestId === 1 && fields.status === 1);
   assert.ok(index);

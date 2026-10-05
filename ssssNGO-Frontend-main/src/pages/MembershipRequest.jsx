@@ -48,34 +48,12 @@ const MembershipRequest = () => {
 const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [cities, setCities] = useState([]);
-  const [citiesLoading, setCitiesLoading] = useState(false);
   const [paymentConfig, setPaymentConfig] = useState(null);
   const [paymentIntent, setPaymentIntent] = useState(null);
 
   useEffect(() => {
     getPublicPaymentConfig().then(({ data }) => setPaymentConfig(data)).catch(() => setMessage("Payment availability could not be loaded. Please try again."));
   }, []);
-
-  useEffect(() => {
-    let active = true;
-    if (!form.country || !form.state) {
-      setCities([]);
-      return () => { active = false; };
-    }
-    setCitiesLoading(true);
-    import("country-state-city/lib/city")
-      .then(({ default: City }) => {
-        if (active) setCities(City.getCitiesOfState(form.country, form.state));
-      })
-      .catch(() => {
-        if (active) setCities([]);
-      })
-      .finally(() => {
-        if (active) setCitiesLoading(false);
-      });
-    return () => { active = false; };
-  }, [form.country, form.state]);
 
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -237,19 +215,14 @@ useEffect(() => {
             ))}
           </Select>
 
-          <Select
+          <Input
             name="city"
             value={form.city}
             onChange={handleChange}
             disabled={!form.state}
-          >
-            <option value="">{citiesLoading ? "Loading cities..." : "Select City"}</option>
-            {cities.map((c) => (
-              <option key={c.name} value={c.name}>
-                {c.name}
-              </option>
-            ))}
-          </Select>
+            placeholder={form.state ? "City" : "Select a state first"}
+            autoComplete="address-level2"
+          />
 
           <Input name="pincode" placeholder="Pincode" onChange={handleChange} />
         </Section>

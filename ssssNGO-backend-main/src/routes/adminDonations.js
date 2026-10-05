@@ -6,6 +6,7 @@ const PaymentTransaction = require("../models/PaymentTransaction");
 const { issueDonationReceipt, deliverDonationReceipt, ensureDonationReceiptFile } = require("../services/donationReceiptService");
 const { sendPrivateFile } = require("../utils/privateFiles");
 const { sendPaymentProof } = require("../services/paymentProofStorage");
+const { send: sendStoredDocument } = require("../services/privateDocumentStorage");
 
 const router = express.Router();
 router.use(auth, admin);
@@ -15,7 +16,7 @@ router.get("/", async (req, res) => {
   if (req.query.status) query.status = req.query.status;
   const donations = await PaymentTransaction.find(query)
     .sort({ createdAt: -1 }).limit(300)
-    .select("donor provider verificationType currency baseAmount totalAmount status proofFile proofDocument paymentReference paymentDate paymentMethod transactionReference donorNote reviewedBy reviewedAt rejectionReason receiptNumber receiptPath receiptIssuedAt receiptDeliveryStatus receiptDeliveryAttempts receiptDeliveryError createdAt verifiedAt");
+    .select("donor provider verificationType currency baseAmount totalAmount status proofFile proofDocument paymentReference paymentDate paymentMethod transactionReference donorNote reviewedBy reviewedAt rejectionReason receiptNumber receiptPath receiptDocument receiptIssuedAt receiptDeliveryStatus receiptDeliveryAttempts receiptDeliveryError createdAt verifiedAt");
   res.json(donations);
 });
 
@@ -61,7 +62,13 @@ router.get("/:id/receipt", async (req, res) => {
     let donation = await PaymentTransaction.findOne({ _id: req.params.id, purpose: "donation", status: "verified" });
     if (!donation?.receiptNumber) return res.status(404).json({ message: "Receipt not found" });
     donation = await ensureDonationReceiptFile(donation);
-    return res.download(donation.receiptPath, `${donation.receiptNumber}.pdf`);
+    if (donation.receiptDocument?.publicId) {
+      return sendStoredDocument(res, donation.receiptDocument, {
+        disposition: "attachment",
+        filename: `${donation.receiptNumber}.pdf`,
+      });
+    }
+    return res.status(404).json({ message: "Receipt document is unavailable" });
   } catch (error) {
     console.error("Donation receipt download failed", { donationId: req.params.id, message: error.message });
     return res.status(500).json({ message: "Receipt could not be prepared" });

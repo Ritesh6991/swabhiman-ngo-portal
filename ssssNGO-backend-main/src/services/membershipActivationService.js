@@ -8,8 +8,29 @@ const generateCertificate = require("../utils/generateCertificate");
 const sendMail = require("../utils/sendMail");
 const escapeHtml = require("../utils/escapeHtml");
 const path = require("path");
+const {
+  uploadGeneratedPdf,
+  destroyDocuments,
+  downloadDocument,
+} = require("./membershipDocumentStorage");
 
 const buildMemberId = (request) => `SVB-${request._id.toString().slice(-8).toUpperCase()}`;
+
+async function getMemberPhotoBuffer(request) {
+  if (request.photoDocument?.publicId) return downloadDocument(request.photoDocument);
+  const memberPhotoPath = path.resolve("uploads", "docs", request.photoFile || "");
+  if (request.photoFile && fs.existsSync(memberPhotoPath)) return fs.promises.readFile(memberPhotoPath);
+  throw Object.assign(new Error("Membership activation requires the applicant's submitted photograph"), { status: 409 });
+}
+
+async function generateAndStorePdf(generator, payload, kind, filename) {
+  const temporaryPath = await generator(payload);
+  try {
+    return await uploadGeneratedPdf(temporaryPath, kind, filename);
+  } finally {
+    await fs.promises.rm(temporaryPath, { force: true });
+  }
+}
 
 async function deliverMembershipDocuments({ user, request, force = false }) {
   const delivery = await DeliveryLog.findOneAndUpdate(
@@ -33,36 +54,63 @@ async function deliverMembershipDocuments({ user, request, force = false }) {
     validTill: request.validTill,
   };
 
-  let idCardPath = request.idCardPath || user.idCardPath;
-  let certificatePath = request.certificatePath || user.certificatePath;
-  // A forced resend must rebuild both PDFs so previously issued documents pick
-  // up the current logo, signatures, address and layout instead of reusing an
-  // older template from disk.
-  if (force || !idCardPath || !fs.existsSync(idCardPath)) idCardPath = await generateIdCard(pdfUser);
-  if (force || !certificatePath || !fs.existsSync(certificatePath)) certificatePath = await generateCertificate(pdfUser);
+  const photoBuffer = await getMemberPhotoBuffer(request);
+  let idCardDocument = request.idCardDocument || user.idCardDocument;
+  let certificateDocument = request.certificateDocument || user.certificateDocument;
+  const newlyStored = [];
+  try {
+    // A forced resend rebuilds both PDFs so issued documents use the current
+    // approved branding while the previous authenticated assets remain
+    // available for rollback until a separate cleanup is authorised.
+    if (force || !idCardDocument?.publicId) {
+      idCardDocument = await generateAndStorePdf(
+        generateIdCard,
+        { ...pdfUser, photoBuffer },
+        "id-cards",
+        `${user.memberId}-ID-Card.pdf`
+      );
+      newlyStored.push(idCardDocument);
+    }
+    if (force || !certificateDocument?.publicId) {
+      certificateDocument = await generateAndStorePdf(
+        generateCertificate,
+        pdfUser,
+        "certificates",
+        `${user.memberId}-Certificate.pdf`
+      );
+      newlyStored.push(certificateDocument);
+    }
+  } catch (error) {
+    await destroyDocuments(newlyStored);
+    throw error;
+  }
 
   delivery.status = "generated";
-  delivery.idCardPath = idCardPath;
-  delivery.certificatePath = certificatePath;
+  delivery.idCardDocument = idCardDocument;
+  delivery.certificateDocument = certificateDocument;
   delivery.attempts += 1;
   delivery.lastAttemptAt = new Date();
   await delivery.save();
 
-  request.idCardPath = idCardPath;
-  request.certificatePath = certificatePath;
+  request.idCardDocument = idCardDocument;
+  request.certificateDocument = certificateDocument;
   request.emailDeliveryStatus = "generated";
-  user.idCardPath = idCardPath;
-  user.certificatePath = certificatePath;
+  user.idCardDocument = idCardDocument;
+  user.certificateDocument = certificateDocument;
   await Promise.all([request.save(), user.save()]);
 
   try {
+    const [idCardContent, certificateContent] = await Promise.all([
+      downloadDocument(idCardDocument),
+      downloadDocument(certificateDocument),
+    ]);
     const result = await sendMail({
       to: user.email,
       subject: "Your Swabhiman Shiksha Sanskriti Samajotthan Nyas membership documents",
       html: `<p>Dear ${escapeHtml(request.name)},</p><p>Your membership is now active. Your member ID is <strong>${escapeHtml(user.memberId)}</strong>.</p><p>Your ID card and membership certificate are attached.</p><p>For support, contact ${escapeHtml(process.env.SUPPORT_EMAIL || "swabhimansanskritisamajothan@gmail.com")}.</p>`,
       attachments: [
-        { filename: `${user.memberId}-ID-Card.pdf`, path: idCardPath },
-        { filename: `${user.memberId}-Certificate.pdf`, path: certificatePath },
+        { filename: `${user.memberId}-ID-Card.pdf`, content: idCardContent },
+        { filename: `${user.memberId}-Certificate.pdf`, content: certificateContent },
       ],
     });
     delivery.status = "sent";
@@ -96,10 +144,7 @@ async function activateMembership(transaction) {
     const user = request && await User.findById(request.userId);
     if (!request || !user) throw new Error("Membership request or user not found");
     if (transaction.status !== "verified") throw new Error("Payment must be verified before activation");
-    const memberPhotoPath = path.resolve("uploads", "docs", request.photoFile || "");
-    if (!request.photoFile || !fs.existsSync(memberPhotoPath)) {
-      throw new Error("Membership activation requires the applicant's submitted photograph");
-    }
+    await getMemberPhotoBuffer(request);
 
     const now = new Date();
     user.joined = true;
@@ -126,4 +171,4 @@ async function activateMembership(transaction) {
   return transaction;
 }
 
-module.exports = { activateMembership, deliverMembershipDocuments };
+module.exports = { activateMembership, deliverMembershipDocuments, getMemberPhotoBuffer };

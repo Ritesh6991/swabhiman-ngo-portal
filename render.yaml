@@ -65,6 +65,12 @@ services:
         value: swabhiman/private/payments/membership
       - key: MEMBERSHIP_LEGACY_DOCUMENT_FOLDER
         value: swabhiman/private/membership/reuploads
+      - key: MEMBERSHIP_DOCUMENT_FOLDER
+        value: swabhiman/private/membership/applications
+      - key: MEMBERSHIP_GENERATED_DOCUMENT_FOLDER
+        value: swabhiman/private/membership/generated
+      - key: DONATION_RECEIPT_FOLDER
+        value: swabhiman/private/donations/receipts
       - key: DONATION_PAYMENT_PROOF_FOLDER
         value: swabhiman/private/payments/donation
 

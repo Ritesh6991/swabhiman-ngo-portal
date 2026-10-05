@@ -57,6 +57,7 @@ const paymentTransactionSchema = new mongoose.Schema(
     rejectionReason: { type: String, trim: true, default: "" },
     receiptNumber: { type: String, default: null },
     receiptPath: { type: String, default: "" },
+    receiptDocument: { type: mongoose.Schema.Types.Mixed, default: null },
     receiptIssuedAt: { type: Date, default: null },
     receiptDeliveryStatus: {
       type: String,

@@ -9,10 +9,9 @@ const PaymentTransaction = require("../models/PaymentTransaction");
 const DeliveryLog = require("../models/DeliveryLog");
 const { getPaymentConfig } = require("../config/paymentConfig");
 const { getPaymentSettings, gatewayCredentialsConfigured } = require("../services/paymentSettingsService");
-const { activateMembership, deliverMembershipDocuments } = require("../services/membershipActivationService");
+const { activateMembership, deliverMembershipDocuments, getMemberPhotoBuffer } = require("../services/membershipActivationService");
 const { confirmManualMembershipPayment } = require("../services/manualMembershipPaymentService");
 const path = require("path");
-const fs = require("fs");
 const { sendPrivateFile } = require("../utils/privateFiles");
 const mongoose = require("mongoose");
 const LegacyDocumentSubmission = require("../models/LegacyDocumentSubmission");
@@ -144,10 +143,11 @@ router.post("/approve/:id", auth, admin, async (req, res) => {
       return res.status(409).json({ message: "Rejected applications cannot be approved. Ask the applicant to submit a new request." });
     }
 
-    const memberPhotoPath = path.resolve("uploads", "docs", request.photoFile || "");
-    if (!request.photoFile || !fs.existsSync(memberPhotoPath)) {
+    try {
+      await getMemberPhotoBuffer(request);
+    } catch (photoError) {
       return res.status(409).json({
-        message: "The applicant photo is missing from server storage. Reject this request and ask the applicant to submit a new application.",
+        message: "The applicant photo is missing from durable storage. Ask the member to use secure document re-upload; their existing application and payment history will remain unchanged.",
       });
     }
 

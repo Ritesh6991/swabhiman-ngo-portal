@@ -5,7 +5,6 @@ const upload = require("../middleware/uploadDocs");
 const MembershipRequest = require("../models/MembershipRequest");
 const User = require("../models/User");
 const sendMail = require("../utils/sendMail");
-const fs = require("fs");
 const { membershipAmountForType } = require("../services/manualUpiPaymentService");
 const { normalizeOptionalMembershipFields } = require("../utils/normalizeMembershipInput");
 const LegacyDocumentSubmission = require("../models/LegacyDocumentSubmission");
@@ -13,8 +12,7 @@ const LegacyDocumentAudit = require("../models/LegacyDocumentAudit");
 const { legacyDocumentUpload, validateLegacyDocuments } = require("../middleware/legacyDocumentUpload");
 const { uploadLegacyDocuments, destroyLegacyDocuments, sendLegacyDocument } = require("../services/legacyDocumentStorage");
 const { documentState } = require("../services/legacyDocumentRecovery");
-
-const removeUploadedFiles = (files) => Object.values(files || {}).flat().forEach((file) => fs.rmSync(file.path, { force: true }));
+const { uploadApplicationDocuments, destroyDocuments } = require("../services/membershipDocumentStorage");
 
 // ================= TEST ROUTE =================
 router.get("/", (req, res) => {
@@ -111,6 +109,7 @@ router.post(
   ]),
   upload.validateMembershipFiles,
   async (req, res) => {
+    let uploadedDocuments;
     try {
       const body = normalizeOptionalMembershipFields(req.body);
       const membershipType = body.membershipType;
@@ -121,9 +120,10 @@ router.post(
 
       const existingRequest = await MembershipRequest.findOne({ userId: req.user.id, status: { $ne: "rejected" } });
       if (existingRequest) {
-        removeUploadedFiles(req.files);
         return res.status(409).json({ message: "A membership application already exists for this account" });
       }
+
+      uploadedDocuments = await uploadApplicationDocuments(req.files);
 
       const request = await MembershipRequest.create({
         ...body,
@@ -132,10 +132,9 @@ router.post(
         membershipType,
         amount,
 
-        // ✅ SAFE FILE ACCESS
-        photoFile: req.files?.photo?.[0]?.filename || "",
-        aadhaarFile: req.files?.aadhaar?.[0]?.filename || "",
-        panFile: req.files?.pan?.[0]?.filename || "",
+        photoDocument: uploadedDocuments.photo,
+        aadhaarDocument: uploadedDocuments.aadhaar,
+        panDocument: uploadedDocuments.pan,
       });
 
       // ✅ FIXED TEMPLATE STRING
@@ -151,10 +150,10 @@ router.post(
 
       res.status(201).json({ success: true, request, next: "payment" });
     } catch (err) {
+      if (uploadedDocuments) await destroyDocuments(Object.values(uploadedDocuments));
       console.error("REQUEST ERROR:", err);
-      res.status(500).json({
-        message: "Failed",
-        error: err.message,
+      res.status(err.status || 500).json({
+        message: err.status ? err.message : "Membership application could not be saved",
       });
     }
   }

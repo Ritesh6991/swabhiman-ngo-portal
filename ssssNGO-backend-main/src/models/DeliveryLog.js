@@ -23,6 +23,8 @@ const deliveryLogSchema = new mongoose.Schema(
     lastError: { type: String, default: "" },
     idCardPath: { type: String, default: "" },
     certificatePath: { type: String, default: "" },
+    idCardDocument: { type: mongoose.Schema.Types.Mixed, default: null },
+    certificateDocument: { type: mongoose.Schema.Types.Mixed, default: null },
   },
   { timestamps: true }
 );

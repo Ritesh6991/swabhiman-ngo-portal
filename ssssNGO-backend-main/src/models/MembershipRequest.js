@@ -208,6 +208,8 @@ const membershipSchema = new mongoose.Schema(
     },
 
     certificatePath: { type: String, default: "" },
+    idCardDocument: { type: storedDocumentSchema, default: null },
+    certificateDocument: { type: storedDocumentSchema, default: null },
 
     emailDeliveryStatus: {
       type: String,

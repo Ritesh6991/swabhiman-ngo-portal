@@ -41,6 +41,8 @@ const userSchema = new mongoose.Schema(
 
     idCardPath: { type: String, default: "" },
     certificatePath: { type: String, default: "" },
+    idCardDocument: { type: mongoose.Schema.Types.Mixed, default: null },
+    certificateDocument: { type: mongoose.Schema.Types.Mixed, default: null },
     membershipActivatedAt: { type: Date, default: null },
 
     location: {

@@ -74,7 +74,7 @@ const drawFront = (doc, member, logo) => {
   const photoW = 67;
   const photoH = 64;
   doc.roundedRect(photoX - 2, photoY - 2, photoW + 4, photoH + 4, 3).fill(BRAND.navy);
-  const photo = resolvePhoto(member.photoFile);
+  const photo = Buffer.isBuffer(member.photoBuffer) ? member.photoBuffer : resolvePhoto(member.photoFile);
   if (photo) {
     doc.save().roundedRect(photoX, photoY, photoW, photoH, 1.5).clip();
     doc.image(photo, photoX, photoY, { cover: [photoW, photoH], align: "center", valign: "center" });
