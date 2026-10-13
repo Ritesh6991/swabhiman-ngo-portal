@@ -16,7 +16,7 @@ services:
       - key: JWT_SECRET
         sync: false
       - key: FRONTEND_URL
-        value: https://swabhiman-ngo-portal.vercel.app
+        value: https://www.swabhimanshikshasanskriti.in
       - key: PUBLIC_API_URL
         value: https://swabhiman-ngo-api-ritesh.onrender.com
       - key: CORS_ORIGINS

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import logo from "../assets/logo.png"; // Adjust the path if needed
+import OrganisationLogo from "./OrganisationLogo";
 const slides = [
   {
     title: "Education is the most powerful weapon",
@@ -38,11 +38,7 @@ const HeroSlider = () => {
   className="text-center px-6 flex flex-col items-center"
 >
   {/* Logo */}
-  <img
-    src={logo}
-    alt="Logo"
-    className="w-28 sm:w-36 md:w-44 lg:w-52 xl:w-56 h-auto object-contain mb-6"
-  />
+  <OrganisationLogo className="mb-6 h-auto w-28 sm:w-36 md:w-44 lg:w-52 xl:w-56" />
 
   <h1 className="text-3xl sm:text-5xl font-bold text-[#EDEDCE] mb-4">
     {slides[index].title}

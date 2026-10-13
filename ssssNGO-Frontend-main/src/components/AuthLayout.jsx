@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { ShieldCheck, HeartHandshake, GraduationCap } from "lucide-react";
-import logo from "../assets/logo.png";
+import OrganisationLogo from "./OrganisationLogo";
 
 const highlights = [
   [ShieldCheck, "Secure member access", "Your account and membership information are protected."],
@@ -15,7 +15,7 @@ const AuthLayout = ({ eyebrow, title, description, children }) => (
       <div className="absolute -bottom-36 -left-28 h-96 w-96 rounded-full bg-[#1E6674]/30" />
       <Link to="/" className="relative flex items-center gap-4" aria-label="Return to home">
         <span className="grid h-16 w-16 place-items-center rounded-2xl bg-white p-2 shadow-lg">
-          <img src={logo} alt="Swabhiman Shiksha Sanskriti Samajotthan Nyas logo" className="h-full w-full object-contain" />
+          <OrganisationLogo className="h-full w-full" />
         </span>
         <span>
           <span className="block text-xl font-bold">Swabhiman</span>
@@ -41,7 +41,7 @@ const AuthLayout = ({ eyebrow, title, description, children }) => (
     <section className="flex min-h-screen items-center justify-center px-5 py-10 sm:px-8 lg:px-12">
       <div className="w-full max-w-lg">
         <Link to="/" className="mb-9 flex items-center gap-3 lg:hidden">
-          <img src={logo} alt="Swabhiman Shiksha Sanskriti Samajotthan Nyas logo" className="h-12 w-12 object-contain" />
+          <OrganisationLogo className="h-12 w-12" />
           <span>
             <span className="block font-bold leading-tight text-[#0B2948]">Swabhiman</span>
             <span className="block text-xs leading-tight text-slate-600">Shiksha Sanskriti Samajotthan Nyas</span>

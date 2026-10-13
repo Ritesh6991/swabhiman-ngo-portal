@@ -12,7 +12,7 @@ import {
   FileLock2,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import logo from "../assets/logo.png";
+import OrganisationLogo from "./OrganisationLogo";
 
 const navVariants = {
   hidden: { y: -80, opacity: 0 },
@@ -62,7 +62,7 @@ const Navbar = () => {
   onClick={() => navigate("/")}
 >
   {/* Bigger Logo */}
-  <img src={logo} alt="logo" className="w-12 h-12 object-contain" />
+  <OrganisationLogo className="h-12 w-12" />
 
   <div className="leading-tight">
     {/* Bigger Svabhiman */}

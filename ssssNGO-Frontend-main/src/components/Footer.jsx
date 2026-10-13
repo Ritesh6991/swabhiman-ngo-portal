@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Facebook, Heart, Instagram, Mail, MapPin, MessageCircle, Phone, Youtube } from "lucide-react";
 import { Link } from "react-router-dom";
+import OrganisationLogo from "./OrganisationLogo";
 
 const Footer = () => {
   return (
@@ -9,9 +10,12 @@ const Footer = () => {
 
         {/* NGO INFO */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          <h2 className="text-lg font-semibold">
-            Swabhiman Shiksha Sanskriti Samajotthan Nyas
-          </h2>
+          <Link to="/" aria-label="Go to website home" className="inline-flex items-center gap-3">
+            <OrganisationLogo className="h-14 w-14 shrink-0" />
+            <h2 className="text-lg font-semibold">
+              Swabhiman Shiksha Sanskriti Samajotthan Nyas
+            </h2>
+          </Link>
           <p className="text-sm mt-2 text-gray-200">
             शिक्षा • संस्कृति • समाज सेवा
           </p>
