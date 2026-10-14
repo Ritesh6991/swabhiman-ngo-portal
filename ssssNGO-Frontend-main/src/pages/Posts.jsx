@@ -55,7 +55,7 @@ const Posts = () => {
       )}
 
       {/* EMPTY STATE */}
-      {!loading && posts.length === 0 && (
+      {!loading && !error && posts.length === 0 && (
         <p className="text-center text-gray-500">
           No campaigns yet 🚀
         </p>
