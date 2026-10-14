@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import API from "../services/api";
+import LinkifiedPostText from "./LinkifiedPostText";
 
 const PostCard = ({ post }) => {
   const navigate = useNavigate();
@@ -29,7 +30,9 @@ const PostCard = ({ post }) => {
       />
 
       <div className="p-3">
-        <p className="line-clamp-2">{post.caption}</p>
+        <p className="line-clamp-2 whitespace-pre-wrap break-words">
+          <LinkifiedPostText text={post.caption} />
+        </p>
 
         <div className="flex gap-4 mt-2 text-sm">
           <motion.button

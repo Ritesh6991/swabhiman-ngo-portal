@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import ImageSlider from "../components/ImageSlider";
+import LinkifiedPostText from "../components/LinkifiedPostText";
 import API from "../services/api";
 
 const PostDetail = () => {
@@ -67,7 +68,9 @@ const PostDetail = () => {
       </div>
 
       {/* CAPTION */}
-      <p className="mt-4 text-lg leading-relaxed">{post.caption}</p>
+      <p className="mt-4 whitespace-pre-wrap break-words text-lg leading-relaxed">
+        <LinkifiedPostText text={post.caption} />
+      </p>
 
       {/* COMMENTS */}
       <div className="space-y-3 mt-6">
