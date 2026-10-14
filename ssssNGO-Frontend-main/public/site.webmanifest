@@ -1,0 +1,21 @@
+{
+  "name": "Swabhiman Shiksha Sanskriti Samajotthan Nyas",
+  "short_name": "Swabhiman",
+  "description": "Official website of Swabhiman Shiksha Sanskriti Samajotthan Nyas.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#10345f",
+  "icons": [
+    {
+      "src": "/favicon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
