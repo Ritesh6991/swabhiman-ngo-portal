@@ -76,6 +76,7 @@ app.use("/api/admin/donations", require("./routes/adminDonations"));
 app.use("/api/accounts", require("./routes/accounts"));
 app.use("/api/exams", require("./routes/exams"));
 app.use("/api/announcements", require("./routes/announcements"));
+app.use("/api/analytics", require("./routes/analytics"));
 
 app.get("/", (req, res) => {
   res.send("NGO API is running");
