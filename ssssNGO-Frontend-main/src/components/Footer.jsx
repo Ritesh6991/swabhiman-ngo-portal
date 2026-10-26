@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Facebook, Heart, Instagram, Mail, MapPin, MessageCircle, Phone, Youtube } from "lucide-react";
+import { Facebook, Heart, Instagram, Linkedin, Mail, MapPin, MessageCircle, Phone, Youtube } from "lucide-react";
 import { Link } from "react-router-dom";
 import OrganisationLogo from "./OrganisationLogo";
 
@@ -101,6 +101,18 @@ const Footer = () => {
                 <MessageCircle size={17} aria-hidden="true" />
               </span>
               <span>WhatsApp</span>
+            </a>
+            <a
+              href="https://www.linkedin.com/in/swabhiman-shiksha-sanskriti-samajotthan-nyas-regd-2aa008442"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Follow us on LinkedIn"
+              className="group flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 transition hover:-translate-y-0.5 hover:bg-white/10 hover:text-white"
+            >
+              <span className="grid h-8 w-8 place-items-center rounded-full bg-sky-500/20 text-sky-300 group-hover:bg-sky-600 group-hover:text-white">
+                <Linkedin size={17} aria-hidden="true" />
+              </span>
+              <span>LinkedIn</span>
             </a>
           </div>
         </div>
