@@ -45,3 +45,13 @@ test("Vercel serves route-specific SEO entry pages before the SPA fallback", asy
   });
   assert.deepEqual(vercel.rewrites.at(-1), { source: "/(.*)", destination: "/" });
 });
+
+test("Vercel excludes private routes from server-level indexing", async () => {
+  const vercel = JSON.parse(await readFile(new URL("vercel.json", root), "utf8"));
+  const privateHeaders = new Map(
+    vercel.headers.map(({ source, headers }) => [source, headers?.find(({ key }) => key === "X-Robots-Tag")?.value]),
+  );
+  ["/admin/:path*", "/verify/:path*", "/login", "/register", "/join", "/members", "/my-documents"].forEach(
+    (route) => assert.equal(privateHeaders.get(route), "noindex, nofollow"),
+  );
+});
