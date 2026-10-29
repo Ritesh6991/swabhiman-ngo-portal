@@ -5,6 +5,9 @@ import PostSkeleton from "../components/PostSkeleton";
 import API from "../services/api";
 import { useEffect, useState } from "react";
 import AnnouncementBar from "../components/AnnouncementBar";
+import { Link } from "react-router-dom";
+
+const HOMEPAGE_POST_LIMIT = 6;
 
 const Home = () => {
   const [posts, setPosts] = useState([]);
@@ -39,7 +42,7 @@ const Home = () => {
             ? Array.from({ length: 6 }).map((_, i) => (
                 <PostSkeleton key={i} />
               ))
-            : posts.map((post) => (
+            : posts.slice(0, HOMEPAGE_POST_LIMIT).map((post) => (
                 <PostCard
                   key={post._id}
                   post={post}
@@ -47,6 +50,16 @@ const Home = () => {
                 />
               ))}
         </div>
+        {!loading && posts.length > HOMEPAGE_POST_LIMIT && (
+          <div className="mt-10 text-center">
+            <Link
+              to="/posts"
+              className="inline-flex min-h-11 items-center justify-center rounded-full bg-[#0C2C55] px-6 py-2.5 font-semibold text-white transition hover:bg-[#123f75] focus:outline-none focus:ring-2 focus:ring-[#0C2C55] focus:ring-offset-2"
+            >
+              View All Campaigns
+            </Link>
+          </div>
+        )}
       </section>
 
       {/* JOIN CTA */}

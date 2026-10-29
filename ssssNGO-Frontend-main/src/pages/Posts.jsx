@@ -3,16 +3,20 @@ import API from "../services/api";
 import PostCard from "../components/PostCard";
 import PostSkeleton from "../components/PostSkeleton";
 
+const POSTS_PER_BATCH = 9;
+
 const Posts = () => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [visibleCount, setVisibleCount] = useState(POSTS_PER_BATCH);
 
   const fetchPosts = async () => {
     try {
       setLoading(true);
       const res = await API.get("/posts");
       setPosts(res.data);
+      setVisibleCount(POSTS_PER_BATCH);
       setError(null);
     } catch (err) {
       console.error("Failed to load posts:", err);
@@ -64,9 +68,20 @@ const Posts = () => {
       {/* POSTS */}
       {!loading && posts.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {posts.map((post) => (
+          {posts.slice(0, visibleCount).map((post) => (
             <PostCard key={post._id} post={post} />
           ))}
+        </div>
+      )}
+      {!loading && visibleCount < posts.length && (
+        <div className="mt-10 text-center">
+          <button
+            type="button"
+            onClick={() => setVisibleCount((count) => Math.min(count + POSTS_PER_BATCH, posts.length))}
+            className="min-h-11 rounded-full bg-[#0C2C55] px-6 py-2.5 font-semibold text-white transition hover:bg-[#123f75] focus:outline-none focus:ring-2 focus:ring-[#0C2C55] focus:ring-offset-2"
+          >
+            Load More Campaigns
+          </button>
         </div>
       )}
     </div>

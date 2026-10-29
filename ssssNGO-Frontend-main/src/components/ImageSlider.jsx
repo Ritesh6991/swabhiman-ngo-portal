@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
+import { optimizePublicImage } from "../utils/imageDelivery";
 
 const ImageSlider = ({ images = [], alt = "Swabhiman Nyas campaign photograph" }) => {
   const [index, setIndex] = useState(0);
@@ -15,7 +16,7 @@ const ImageSlider = ({ images = [], alt = "Swabhiman Nyas campaign photograph" }
       <AnimatePresence mode="wait">
         <motion.img
           key={index}
-          src={images[index]}
+          src={optimizePublicImage(images[index], 1200)}
           alt={`${alt}${images.length > 1 ? ` (${index + 1} of ${images.length})` : ""}`}
           decoding="async"
           width="1200"

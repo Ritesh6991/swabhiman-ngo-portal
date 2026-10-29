@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import API from "../services/api";
 import LinkifiedPostText from "./LinkifiedPostText";
+import { optimizePublicImage } from "../utils/imageDelivery";
 
 const PostCard = ({ post }) => {
   const navigate = useNavigate();
@@ -19,7 +20,7 @@ const PostCard = ({ post }) => {
     setLikes(res.data);
   };
 
-  const image = post.images?.[0];
+  const image = optimizePublicImage(post.images?.[0], 800);
 
   return (
     <div className="bg-white rounded-xl shadow overflow-hidden">
