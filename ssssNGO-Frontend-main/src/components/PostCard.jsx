@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import API from "../services/api";
 import LinkifiedPostText from "./LinkifiedPostText";
@@ -41,14 +40,13 @@ const PostCard = ({ post }) => {
         </p>
 
         <div className="flex gap-4 mt-2 text-sm">
-          <motion.button
-            whileTap={{ scale: 1.3 }}
+          <button
             onClick={handleLike}
-            className={likedByMe ? "text-red-500" : ""}
+            className={`${likedByMe ? "text-red-500" : ""} transition-transform active:scale-125`}
             aria-label={likedByMe ? "Unlike this post" : "Like this post"}
           >
             ❤️ {likes.length}
-          </motion.button>
+          </button>
 
           <span>💬 {post.comments?.length || 0}</span>
         </div>

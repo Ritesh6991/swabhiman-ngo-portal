@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   Menu,
   X,
@@ -13,16 +12,6 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import OrganisationLogo from "./OrganisationLogo";
-
-const navVariants = {
-  hidden: { y: -80, opacity: 0 },
-  visible: { y: 0, opacity: 1 },
-};
-
-const menuVariants = {
-  hidden: { height: 0, opacity: 0 },
-  visible: { height: "auto", opacity: 1 },
-};
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -45,20 +34,15 @@ const Navbar = () => {
   );
 
   return (
-    <motion.nav
-      variants={navVariants}
-      initial="hidden"
-      animate="visible"
-      transition={{ duration: 0.6 }}
-      className="bg-[#0C2C55] sticky top-0 z-50 shadow"
-    >
+    <nav className="bg-[#0C2C55] sticky top-0 z-50 shadow">
       <div className="max-w-7xl mx-auto px-6 py-3 flex justify-between items-center">
         {/* LOGO */}
        {/* LOGO */}
 {/* LOGO */}
-<motion.div
-  whileHover={{ scale: 1.05 }}
-  className="flex items-center gap-3 cursor-pointer"
+<button
+  type="button"
+  aria-label="Go to website home"
+  className="flex items-center gap-3 cursor-pointer text-left transition-transform hover:scale-[1.03]"
   onClick={() => navigate("/")}
 >
   {/* Bigger Logo */}
@@ -75,7 +59,7 @@ const Navbar = () => {
       Shiksha Sanskriti Samajotthan Nyas
     </span>
   </div>
-</motion.div>
+</button>
 
         {/* DESKTOP MENU */}
         <div className="hidden lg:flex items-center gap-6">
@@ -111,14 +95,12 @@ const Navbar = () => {
             <>
               <NavLink to="/my-documents"><span className="flex items-center gap-1"><FileLock2 size={16} /> My Documents</span></NavLink>
               {!user.joined && (
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                <button
                   onClick={() => navigate("/join")}
                   className="bg-[#296374] text-[#EDEDCE] px-4 py-1.5 rounded-full"
                 >
                   Join
-                </motion.button>
+                </button>
               )}
 
               {user.joined && (
@@ -135,13 +117,12 @@ const Navbar = () => {
                 </NavLink>
               )}
 
-              <motion.button
-                whileHover={{ scale: 1.05 }}
+              <button
                 onClick={handleLogout}
                 className="bg-[#296374] text-[#EDEDCE] px-3 py-1.5 rounded flex items-center gap-1"
               >
                 <LogOut size={16} /> Logout
-              </motion.button>
+              </button>
             </>
           )}
         </div>
@@ -156,16 +137,8 @@ const Navbar = () => {
       </div>
 
       {/* MOBILE MENU */}
-      <AnimatePresence>
         {open && (
-          <motion.div
-            variants={menuVariants}
-            initial="hidden"
-            animate="visible"
-            exit="hidden"
-            transition={{ duration: 0.3 }}
-            className="lg:hidden bg-[#296374] overflow-hidden"
-          >
+          <div className="lg:hidden bg-[#296374] overflow-hidden">
             <div className="flex flex-col gap-4 px-6 py-5">
               <NavLink to="/">Home</NavLink>
               <NavLink to="/Posts">Posts</NavLink>
@@ -215,10 +188,9 @@ const Navbar = () => {
                 </>
               )}
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
-    </motion.nav>
+    </nav>
   );
 };
 

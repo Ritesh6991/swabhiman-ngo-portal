@@ -1,4 +1,3 @@
-import { motion } from "framer-motion";
 import { Facebook, Heart, Instagram, Linkedin, Mail, MapPin, MessageCircle, Phone, Youtube } from "lucide-react";
 import { Link } from "react-router-dom";
 import OrganisationLogo from "./OrganisationLogo";
@@ -9,7 +8,7 @@ const Footer = () => {
       <div className="max-w-7xl mx-auto px-6 py-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
 
         {/* NGO INFO */}
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+        <div>
           <Link to="/" aria-label="Go to website home" className="inline-flex items-center gap-3">
             <OrganisationLogo className="h-14 w-14 shrink-0" />
             <h2 className="text-lg font-semibold">
@@ -22,7 +21,7 @@ const Footer = () => {
           <p className="text-xs mt-2 text-gray-300">
             Empowering society through education and cultural values.
           </p>
-        </motion.div>
+        </div>
 
         {/* QUICK LINKS */}
         <div>
@@ -135,14 +134,10 @@ const Footer = () => {
       </div>
 
       {/* BOTTOM BAR */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="border-t border-white/20 text-center text-xs py-4 text-gray-200"
-      >
+      <div className="border-t border-white/20 text-center text-xs py-4 text-gray-200">
         © {new Date().getFullYear()} Swabhiman Shiksha Sanskriti Samajotthan Nyas • Built with{" "}
         <Heart size={12} className="inline text-red-400" /> for society
-      </motion.div>
+      </div>
     </footer>
   );
 };

@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import OrganisationLogo from "./OrganisationLogo";
 const slides = [
   {
@@ -28,13 +27,8 @@ const HeroSlider = () => {
 
   return (
     <div className="h-screen bg-[#0C2C55] flex items-center justify-center relative overflow-hidden">
-      <AnimatePresence mode="wait">
-       <motion.div
+       <div
   key={index}
-  initial={{ opacity: 0, y: 40 }}
-  animate={{ opacity: 1, y: 0 }}
-  exit={{ opacity: 0, y: -40 }}
-  transition={{ duration: 0.8 }}
   className="text-center px-6 flex flex-col items-center"
 >
   {/* Logo */}
@@ -47,17 +41,12 @@ const HeroSlider = () => {
   <p className="text-lg sm:text-2xl text-[#629FAD]">
     {slides[index].subtitle}
   </p>
-</motion.div>
-      </AnimatePresence>
+</div>
 
       {/* Scroll Indicator */}
-      <motion.div
-        animate={{ y: [0, 10, 0] }}
-        transition={{ repeat: Infinity, duration: 1.5 }}
-        className="absolute bottom-8 text-[#EDEDCE] text-sm"
-      >
+      <div className="absolute bottom-8 animate-bounce text-[#EDEDCE] text-sm">
         Scroll ↓
-      </motion.div>
+      </div>
     </div>
   );
 };
