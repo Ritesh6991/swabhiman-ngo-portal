@@ -3,6 +3,7 @@ import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import MainLayout from "./layouts/MainLayout";
 import PageViewTracker from "./components/PageViewTracker";
+import { RouteSeo } from "./components/Seo";
 
 const Login = lazy(() => import("./pages/Login"));
 const Register = lazy(() => import("./pages/Register"));
@@ -54,6 +55,7 @@ function App() {
   return (
     <>
       <PageViewTracker />
+      <RouteSeo />
       <Suspense fallback={loadingFallback}>
         <Routes>
         <Route path="/login" element={<Login />} />

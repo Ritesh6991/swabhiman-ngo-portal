@@ -25,6 +25,11 @@ const PostCard = ({ post }) => {
     <div className="bg-white rounded-xl shadow overflow-hidden">
       <img
         src={image}
+        alt={post.caption ? `${post.caption.replace(/\s+/g, " ").trim().slice(0, 120)} — campaign photograph` : "Swabhiman Nyas campaign photograph"}
+        loading="lazy"
+        decoding="async"
+        width="800"
+        height="450"
         onClick={() => navigate(`/posts/${post._id}`)}
         className="w-full h-64 object-cover cursor-pointer"
       />
@@ -39,6 +44,7 @@ const PostCard = ({ post }) => {
             whileTap={{ scale: 1.3 }}
             onClick={handleLike}
             className={likedByMe ? "text-red-500" : ""}
+            aria-label={likedByMe ? "Unlike this post" : "Like this post"}
           >
             ❤️ {likes.length}
           </motion.button>

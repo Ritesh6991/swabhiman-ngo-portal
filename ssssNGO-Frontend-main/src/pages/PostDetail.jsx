@@ -3,6 +3,8 @@ import { useParams } from "react-router-dom";
 import ImageSlider from "../components/ImageSlider";
 import LinkifiedPostText from "../components/LinkifiedPostText";
 import API from "../services/api";
+import { Seo } from "../components/Seo";
+import { textExcerpt } from "../utils/seo";
 
 const PostDetail = () => {
   const { id } = useParams();
@@ -46,8 +48,15 @@ const PostDetail = () => {
 
   return (
     <div className="max-w-4xl mx-auto py-10 px-4">
+      <Seo
+        title={`${textExcerpt(post.caption, 58) || "Campaign Update"} | Swabhiman Nyas`}
+        description={textExcerpt(post.caption, 155) || "Campaign update from Swabhiman Shiksha Sanskriti Samajotthan Nyas."}
+        canonicalPath={`/posts/${post._id}`}
+        type="article"
+        image={post.images?.[0]}
+      />
       {/* SLIDER */}
-      <ImageSlider images={images} />
+      <ImageSlider images={images} alt={textExcerpt(post.caption, 120) || "Swabhiman Nyas campaign photograph"} />
 
       {/* ACTION BAR */}
       <div className="flex justify-between items-center mt-4">

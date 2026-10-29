@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 
-const ImageSlider = ({ images = [] }) => {
+const ImageSlider = ({ images = [], alt = "Swabhiman Nyas campaign photograph" }) => {
   const [index, setIndex] = useState(0);
 
   if (!images.length) return null;
@@ -16,6 +16,10 @@ const ImageSlider = ({ images = [] }) => {
         <motion.img
           key={index}
           src={images[index]}
+          alt={`${alt}${images.length > 1 ? ` (${index + 1} of ${images.length})` : ""}`}
+          decoding="async"
+          width="1200"
+          height="675"
           initial={{ x: 200, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           exit={{ x: -200, opacity: 0 }}
@@ -28,6 +32,7 @@ const ImageSlider = ({ images = [] }) => {
         <>
           <button
             onClick={prev}
+            aria-label="Previous image"
             className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/40 text-white px-3 py-1 rounded-full"
           >
             ‹
@@ -35,6 +40,7 @@ const ImageSlider = ({ images = [] }) => {
 
           <button
             onClick={next}
+            aria-label="Next image"
             className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/40 text-white px-3 py-1 rounded-full"
           >
             ›

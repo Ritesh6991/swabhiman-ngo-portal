@@ -1,5 +1,11 @@
 {
   "rewrites": [
+    { "source": "/posts", "destination": "/seo/posts.html" },
+    { "source": "/Posts", "destination": "/seo/posts.html" },
+    { "source": "/about", "destination": "/seo/about.html" },
+    { "source": "/contact", "destination": "/seo/contact.html" },
+    { "source": "/sangathan", "destination": "/seo/sangathan.html" },
+    { "source": "/donate", "destination": "/seo/donate.html" },
     { "source": "/(.*)", "destination": "/" }
   ],
   "headers": [
