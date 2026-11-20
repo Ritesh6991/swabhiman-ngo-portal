@@ -89,7 +89,7 @@ router.post("/admin/cycles", auth, admin, async (req, res, next) => {
     const values = cycleInput(req.body);
     const cycle = await ExamCycle.create({ ...values, createdBy: req.user.id, updatedBy: req.user.id });
     res.status(201).json(cycle);
-  } catch (error) { if (error.code === 11000) error = Object.assign(new Error("That examination year or public link already exists"), { status: 409 }); next(error); }
+  } catch (error) { if (error.code === 11000) error = Object.assign(new Error("That public link already exists"), { status: 409 }); next(error); }
 });
 
 router.put("/admin/cycles/:id", auth, admin, async (req, res, next) => {

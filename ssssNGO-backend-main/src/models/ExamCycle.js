@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const examCycleSchema = new mongoose.Schema({
   title: { type: String, required: true, trim: true, maxlength: 180 },
-  year: { type: Number, required: true, min: 2000, max: 2200, unique: true, index: true },
+  year: { type: Number, required: true, min: 2000, max: 2200, index: true },
   slug: { type: String, required: true, trim: true, lowercase: true, unique: true, index: true },
   registrationStart: { type: Date, required: true },
   registrationEnd: { type: Date, required: true },

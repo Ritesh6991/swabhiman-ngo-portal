@@ -4,6 +4,7 @@ const { publicExamState, publicCycle } = require("../src/services/examState");
 const { buildExamAnnouncementMessage } = require("../src/services/examAnnouncement");
 const { detectExamDocumentContent } = require("../src/middleware/examUpload");
 const generateAdmitCard = require("../src/utils/generateAdmitCard");
+const ExamCycle = require("../src/models/ExamCycle");
 const fs = require("fs");
 const path = require("path");
 
@@ -21,6 +22,11 @@ test("annual examination derives upcoming, open and closed states from server da
   assert.equal(publicExamState(cycle(), new Date("2026-10-01T00:00:00.000Z")), "upcoming");
   assert.equal(publicExamState(cycle(), new Date("2026-11-15T00:00:00.000Z")), "open");
   assert.equal(publicExamState(cycle(), new Date("2026-12-01T00:00:00.000Z")), "closed");
+});
+
+test("multiple independent events can share a calendar year while slugs remain unique", () => {
+  assert.equal(Boolean(ExamCycle.schema.path("year").options.unique), false);
+  assert.equal(ExamCycle.schema.path("slug").options.unique, true);
 });
 
 test("draft and archived examinations never accept public registrations", () => {
