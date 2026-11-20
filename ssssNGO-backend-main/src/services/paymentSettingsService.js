@@ -32,7 +32,9 @@ const publicSettings = (value) => ({
     payeeName: String(value.upi?.payeeName || ""),
     membershipEnabled: Boolean(value.upi?.membershipEnabled),
     donationEnabled: Boolean(value.upi?.donationEnabled),
-    examEnabled: Boolean(value.upi?.examEnabled),
+    // Existing production settings predate this flag. Inherit the already-approved
+    // general UPI state once; an explicitly stored false still remains disabled.
+    examEnabled: value.upi?.examEnabled === undefined ? Boolean(value.upi?.enabled) : Boolean(value.upi.examEnabled),
   },
   membership: {
     gatewayEnabled: Boolean(value.membership?.gatewayEnabled),
