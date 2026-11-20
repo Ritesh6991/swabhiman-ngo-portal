@@ -234,6 +234,7 @@ const AdminExamRegistrations = () => {
                     new Date(selected.dateOfBirth).toLocaleDateString("en-IN"),
                   ],
                   ["Class", selected.className],
+                  ["City / Region", selected.region],
                   ["Mobile", selected.mobile],
                   ["Email", selected.email],
                   ["Address", selected.fullAddress],
@@ -246,6 +247,8 @@ const AdminExamRegistrations = () => {
                     ["Examination", selected.examCycle?.title],
                     ["Year", selected.examCycle?.year],
                     ["Status", selected.status],
+                    ["Registration Fee", `INR ${Number(selected.registrationFee || 0).toLocaleString("en-IN")}`],
+                    ["Payment", selected.paymentStatus],
                     ["Admit Card", selected.admitCardStatus],
                   ]}
                 />

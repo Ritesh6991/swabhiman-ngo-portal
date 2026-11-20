@@ -19,6 +19,9 @@ const publicCycle = (cycle, now = new Date()) => ({
   examDuration: cycle.examDuration,
   examinationCentre: cycle.examinationCentre,
   examAddress: cycle.examAddress,
+  registrationFee: Number(cycle.registrationFee || 0),
+  eligibleRegions: cycle.eligibleRegions || [],
+  eligibleClassGroups: cycle.eligibleClassGroups || [],
   instructions: cycle.instructions,
   registrationState: publicExamState(cycle, now),
 });

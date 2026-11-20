@@ -3,6 +3,7 @@ const QRCode = require("qrcode");
 const PaymentTransaction = require("../models/PaymentTransaction");
 const MembershipRequest = require("../models/MembershipRequest");
 const User = require("../models/User");
+const ExamRegistration = require("../models/ExamRegistration");
 const { getPaymentConfig } = require("../config/paymentConfig");
 const { getPurposePaymentSettings } = require("./paymentSettingsService");
 const { uploadPaymentProof, destroyPaymentProof } = require("./paymentProofStorage");
@@ -49,7 +50,7 @@ const publicIntent = async (transaction, accessToken = "") => {
     payeeName: transaction.upiSnapshot.payeeName,
     amount: transaction.totalAmount,
     reference: transaction.paymentReference,
-    note: transaction.purpose === "membership" ? "Membership payment" : "Donation",
+    note: transaction.purpose === "membership" ? "Membership payment" : transaction.purpose === "exam" ? "Workshop registration fee" : "Donation",
   });
   return {
     id: transaction._id,
@@ -155,13 +156,39 @@ const createMembershipUpiIntent = async ({ userId, membershipRequestId }) => {
   return publicIntent(transaction);
 };
 
+const createExamUpiIntent = async ({ registration }) => {
+  const settings = await requireUpi("exam");
+  const amount = Number(registration.registrationFee || 0);
+  if (!Number.isFinite(amount) || amount <= 0) throw Object.assign(new Error("This registration does not require a payment."), { status: 409 });
+  const reference = `EXM-${crypto.randomBytes(6).toString("hex").toUpperCase()}`;
+  const accessToken = crypto.randomBytes(32).toString("hex");
+  const transaction = await PaymentTransaction.create({
+    purpose: "exam", examRegistrationId: registration._id,
+    donor: { name: registration.studentName, email: registration.email, phone: registration.mobile },
+    provider: "manual_upi", verificationType: "manual", currency: "INR",
+    baseAmount: amount, taxAmount: 0, totalAmount: amount, status: "created", fulfillmentStatus: "pending",
+    idempotencyKey: `manual-upi-exam:${registration._id}:${reference}`,
+    paymentReference: reference, paymentAccessTokenHash: sha256(accessToken), configurationVersion: settings.version,
+    upiSnapshot: { upiId: settings.upiId, payeeName: settings.payeeName }, paymentMethod: "upi",
+  });
+  try {
+    registration.paymentStatus = "pending";
+    registration.paymentTransactionId = transaction._id;
+    await registration.save();
+    return publicIntent(transaction, accessToken);
+  } catch (error) {
+    await PaymentTransaction.deleteOne({ _id: transaction._id, status: "created" });
+    throw error;
+  }
+};
+
 const submitUpiProof = async ({ transactionId, purpose, userId, accessToken, file, transactionReference, paymentDate }) => {
   const transaction = await PaymentTransaction.findOne({ _id: transactionId, purpose, provider: "manual_upi" });
   if (!transaction) throw Object.assign(new Error("Payment attempt not found."), { status: 404 });
   if (purpose === "membership" && String(transaction.userId) !== String(userId)) {
     throw Object.assign(new Error("Payment attempt not found."), { status: 404 });
   }
-  if (purpose === "donation" && (!accessToken || sha256(accessToken) !== transaction.paymentAccessTokenHash)) {
+  if (["donation", "exam"].includes(purpose) && (!accessToken || sha256(accessToken) !== transaction.paymentAccessTokenHash)) {
     throw Object.assign(new Error("Payment attempt access is invalid."), { status: 403 });
   }
   if (transaction.status !== "created") {
@@ -206,6 +233,7 @@ const submitUpiProof = async ({ transactionId, purpose, userId, accessToken, fil
 module.exports = {
   buildUpiUri,
   createDonationUpiIntent,
+  createExamUpiIntent,
   createMembershipUpiIntent,
   membershipAmountForType,
   publicIntent,

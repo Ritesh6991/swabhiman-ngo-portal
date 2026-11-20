@@ -2,11 +2,16 @@ const mongoose = require("mongoose");
 
 const paymentTransactionSchema = new mongoose.Schema(
   {
-    purpose: { type: String, enum: ["membership", "donation"], required: true, index: true },
+    purpose: { type: String, enum: ["membership", "donation", "exam"], required: true, index: true },
     userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
     membershipRequestId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "MembershipRequest",
+      default: null,
+    },
+    examRegistrationId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ExamRegistration",
       default: null,
     },
     donor: {

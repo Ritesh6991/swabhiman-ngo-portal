@@ -19,9 +19,13 @@ const examRegistrationSchema = new mongoose.Schema({
   fatherName: { type: String, required: true, trim: true, maxlength: 150 },
   dateOfBirth: { type: Date, required: true },
   className: { type: String, required: true, trim: true, maxlength: 80 },
+  region: { type: String, required: true, trim: true, maxlength: 80 },
   fullAddress: { type: String, required: true, trim: true, maxlength: 800 },
   mobile: { type: String, required: true, trim: true, maxlength: 20 },
   email: { type: String, required: true, trim: true, lowercase: true, maxlength: 180 },
+  registrationFee: { type: Number, min: 0, default: 0 },
+  paymentStatus: { type: String, enum: ["not_required", "pending", "verified", "failed"], default: "not_required", index: true },
+  paymentTransactionId: { type: mongoose.Schema.Types.ObjectId, ref: "PaymentTransaction", default: null },
   photoFile: { type: storedDocumentSchema, required: true },
   aadhaarFile: { type: storedDocumentSchema, required: true },
   // Optional at schema level so historical registrations remain readable.

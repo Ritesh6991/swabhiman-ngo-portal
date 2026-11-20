@@ -11,6 +11,9 @@ const cycle = (overrides = {}) => ({
   registrationStart: new Date("2026-11-01T00:00:00.000Z"), registrationEnd: new Date("2026-11-30T23:59:59.000Z"),
   examDate: new Date("2026-12-20T04:30:00.000Z"), reportingTime: "09:00 AM", examStartTime: "10:00 AM",
   examinationCentre: "Delhi", instructions: [], status: "scheduled", ...overrides,
+  registrationFee: 200,
+  eligibleRegions: ["Delhi", "Noida"],
+  eligibleClassGroups: ["Class 6 to 8", "Class 9 to 10", "Class 11 to 12"],
 });
 
 test("annual examination derives upcoming, open and closed states from server dates", () => {
@@ -29,6 +32,8 @@ test("public examination response does not expose admin or private fields", () =
   assert.equal(result.registrationState, "open");
   assert.equal(result.createdBy, undefined);
   assert.equal(result.updatedBy, undefined);
+  assert.equal(result.registrationFee, 200);
+  assert.deepEqual(result.eligibleRegions, ["Delhi", "Noida"]);
 });
 
 test("examination document validation checks file signatures, not only MIME names", () => {

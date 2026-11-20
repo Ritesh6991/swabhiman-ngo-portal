@@ -17,6 +17,7 @@ const defaults = () => {
       payeeName: String(process.env.DONATION_PAYEE_NAME || "Swabhiman Shiksha Sanskriti Samajotthan Nyas").trim(),
       membershipEnabled: Boolean(upiId),
       donationEnabled: Boolean(upiId),
+      examEnabled: Boolean(upiId),
     },
     membership: { gatewayEnabled: false, provider: config.membership.provider },
     donation: { gatewayEnabled: false, provider: config.donation.provider },
@@ -31,6 +32,7 @@ const publicSettings = (value) => ({
     payeeName: String(value.upi?.payeeName || ""),
     membershipEnabled: Boolean(value.upi?.membershipEnabled),
     donationEnabled: Boolean(value.upi?.donationEnabled),
+    examEnabled: Boolean(value.upi?.examEnabled),
   },
   membership: {
     gatewayEnabled: Boolean(value.membership?.gatewayEnabled),
@@ -63,7 +65,7 @@ const validatePaymentSettings = (input) => {
   const next = publicSettings(input);
   next.upi.upiId = next.upi.upiId.trim();
   next.upi.payeeName = next.upi.payeeName.trim().slice(0, 120);
-  const anyUpiEnabled = next.upi.enabled && (next.upi.membershipEnabled || next.upi.donationEnabled);
+  const anyUpiEnabled = next.upi.enabled && (next.upi.membershipEnabled || next.upi.donationEnabled || next.upi.examEnabled);
   if (anyUpiEnabled && !upiPattern.test(next.upi.upiId)) {
     throw Object.assign(new Error("Enter a valid organisation UPI ID before enabling UPI payments."), { status: 400 });
   }
@@ -82,7 +84,7 @@ const validatePaymentSettings = (input) => {
 };
 
 const comparableFields = [
-  "upi.enabled", "upi.upiId", "upi.payeeName", "upi.membershipEnabled", "upi.donationEnabled",
+  "upi.enabled", "upi.upiId", "upi.payeeName", "upi.membershipEnabled", "upi.donationEnabled", "upi.examEnabled",
   "membership.gatewayEnabled", "membership.provider", "donation.gatewayEnabled", "donation.provider",
 ];
 const at = (object, path) => path.split(".").reduce((value, key) => value?.[key], object);
@@ -108,6 +110,15 @@ const updatePaymentSettings = async ({ input, changedBy }) => {
 
 const getPurposePaymentSettings = async (purpose) => {
   const settings = await getPaymentSettings();
+  if (purpose === "exam") return {
+    version: settings.version,
+    upiEnabled: settings.upi.enabled && settings.upi.examEnabled,
+    upiId: settings.upi.upiId,
+    payeeName: settings.upi.payeeName,
+    gatewayEnabled: false,
+    provider: "disabled",
+    credentialsConfigured: false,
+  };
   return {
     version: settings.version,
     upiEnabled: settings.upi.enabled && settings.upi[`${purpose}Enabled`],

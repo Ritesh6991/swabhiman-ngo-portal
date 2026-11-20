@@ -20,6 +20,9 @@ const blank = {
   reportingTime: "",
   examStartTime: "",
   examDuration: "",
+  registrationFee: 0,
+  eligibleRegions: "Delhi\nNoida\nGhaziabad\nGurugram\nFaridabad",
+  eligibleClassGroups: "Class 6 to 8\nClass 9 to 10\nClass 11 to 12",
   examinationCentre: "",
   examAddress: "",
   instructions: "",
@@ -54,6 +57,8 @@ const AdminExamSettings = () => {
       registrationStart: local(cycle.registrationStart),
       registrationEnd: local(cycle.registrationEnd),
       examDate: local(cycle.examDate),
+      eligibleRegions: (cycle.eligibleRegions || []).join("\n"),
+      eligibleClassGroups: (cycle.eligibleClassGroups || []).join("\n"),
       instructions: (cycle.instructions || []).join("\n"),
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -66,8 +71,10 @@ const AdminExamSettings = () => {
         ...form,
         registrationStart: new Date(form.registrationStart).toISOString(),
         registrationEnd: new Date(form.registrationEnd).toISOString(),
-        examDate: new Date(form.examDate).toISOString(),
+        examDate: form.examDate ? new Date(form.examDate).toISOString() : null,
         instructions: form.instructions.split("\n").filter(Boolean),
+        eligibleRegions: form.eligibleRegions.split("\n").filter(Boolean),
+        eligibleClassGroups: form.eligibleClassGroups.split("\n").filter(Boolean),
       };
       if (editing) await API.put(`/exams/admin/cycles/${editing}`, payload);
       else await API.post("/exams/admin/cycles", payload);
@@ -142,6 +149,7 @@ const AdminExamSettings = () => {
             type="datetime-local"
             value={form.examDate}
             onChange={(v) => set("examDate", v)}
+            required={false}
           />
           <Field
             label="Reporting Time"
@@ -161,10 +169,23 @@ const AdminExamSettings = () => {
             onChange={(v) => set("examDuration", v)}
             placeholder="2 Hours"
           />
+          <Field
+            label="Registration Fee (INR)"
+            type="number"
+            value={form.registrationFee}
+            onChange={(v) => set("registrationFee", v)}
+          />
+          <label className="sm:col-span-2 text-sm font-semibold text-slate-700">
+            Eligible Cities / Regions (one per line)
+            <textarea required rows="5" value={form.eligibleRegions} onChange={(e) => set("eligibleRegions", e.target.value)} className="mt-2 w-full rounded-xl border border-slate-300 p-3" />
+          </label>
+          <label className="text-sm font-semibold text-slate-700">
+            Eligible Class Groups (one per line)
+            <textarea required rows="5" value={form.eligibleClassGroups} onChange={(e) => set("eligibleClassGroups", e.target.value)} className="mt-2 w-full rounded-xl border border-slate-300 p-3" />
+          </label>
           <label className="sm:col-span-2 lg:col-span-3 text-sm font-semibold text-slate-700">
             Exam Centre / Venue
             <textarea
-              required
               rows="2"
               value={form.examinationCentre}
               onChange={(e) => set("examinationCentre", e.target.value)}
@@ -174,7 +195,6 @@ const AdminExamSettings = () => {
           <label className="sm:col-span-2 lg:col-span-3 text-sm font-semibold text-slate-700">
             Full Examination Address
             <textarea
-              required
               rows="3"
               value={form.examAddress || ""}
               onChange={(e) => set("examAddress", e.target.value)}
@@ -293,11 +313,12 @@ const Field = ({
   onChange,
   placeholder = "",
   className = "",
+  required = true,
 }) => (
   <label className={`text-sm font-semibold text-slate-700 ${className}`}>
     {label}
     <input
-      required
+      required={required}
       type={type}
       value={value}
       onChange={(event) => onChange(event.target.value)}

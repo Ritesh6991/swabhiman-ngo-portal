@@ -22,6 +22,7 @@ const validSettings = () => ({
     payeeName: "SSSS NYAS",
     membershipEnabled: true,
     donationEnabled: true,
+    examEnabled: true,
   },
   membership: { gatewayEnabled: false, provider: "disabled" },
   donation: { gatewayEnabled: false, provider: "disabled" },
@@ -36,6 +37,13 @@ test("UPI URI uses trusted exact donation amounts", () => {
     assert.equal(uri.searchParams.get("am"), `${amount}.00`);
     assert.equal(uri.searchParams.get("cu"), "INR");
   }
+});
+
+test("UPI URI preserves the authoritative exact workshop registration fee", () => {
+  const uri = new URL(buildUpiUri({ upiId: "ssssnyas@bank", payeeName: "SSSS NYAS", amount: 200, reference: "EXM-TEST", note: "Workshop registration fee" }));
+  assert.equal(uri.searchParams.get("am"), "200.00");
+  assert.equal(uri.searchParams.get("pa"), "ssssnyas@bank");
+  assert.equal(uri.searchParams.get("tr"), "EXM-TEST");
 });
 
 test("donation amount validation accepts valid values without fees", () => {

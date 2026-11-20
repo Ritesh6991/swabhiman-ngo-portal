@@ -4,6 +4,7 @@ const auth = require("../middleware/auth");
 const admin = require("../middleware/admin");
 const PaymentTransaction = require("../models/PaymentTransaction");
 const MembershipRequest = require("../models/MembershipRequest");
+const ExamRegistration = require("../models/ExamRegistration");
 const { activateMembership } = require("../services/membershipActivationService");
 const { issueDonationReceipt } = require("../services/donationReceiptService");
 const { membershipAmountForType } = require("../services/manualUpiPaymentService");
@@ -15,12 +16,13 @@ router.use(auth, admin);
 
 router.get("/", async (req, res) => {
   const query = { verificationType: "manual" };
-  if (["membership", "donation"].includes(req.query.purpose)) query.purpose = req.query.purpose;
+  if (["membership", "donation", "exam"].includes(req.query.purpose)) query.purpose = req.query.purpose;
   if (["created", "pending", "verified", "rejected", "failed", "cancelled"].includes(req.query.status)) query.status = req.query.status;
   const transactions = await PaymentTransaction.find(query).sort({ createdAt: -1 }).limit(300)
     .populate("userId", "name email memberId")
     .populate("membershipRequestId", "name email phone membershipType amount status paymentStatus")
-    .select("purpose userId membershipRequestId donor provider verificationType currency baseAmount totalAmount status fulfillmentStatus paymentReference proofFile proofDocument paymentDate paymentMethod transactionReference reviewedBy reviewedAt rejectionReason receiptNumber receiptDeliveryStatus configurationVersion upiSnapshot createdAt verifiedAt");
+    .populate("examRegistrationId", "studentName email mobile applicationNumber registrationFee paymentStatus status")
+    .select("purpose userId membershipRequestId examRegistrationId donor provider verificationType currency baseAmount totalAmount status fulfillmentStatus paymentReference proofFile proofDocument paymentDate paymentMethod transactionReference reviewedBy reviewedAt rejectionReason receiptNumber receiptDeliveryStatus configurationVersion upiSnapshot createdAt verifiedAt");
   res.json(transactions);
 });
 
@@ -56,6 +58,11 @@ router.post("/:id/approve", async (req, res) => {
         return res.status(409).json({ message: "Payment amount does not match the authoritative membership fee." });
       }
     }
+    if (transaction.purpose === "exam") {
+      const registration = await ExamRegistration.findById(transaction.examRegistrationId);
+      if (!registration) return res.status(404).json({ message: "Exam registration not found." });
+      if (Number(transaction.baseAmount) !== Number(registration.registrationFee) || Number(transaction.totalAmount) !== Number(registration.registrationFee)) return res.status(409).json({ message: "Payment amount does not match the authoritative registration fee." });
+    }
     if (transaction.status === "pending") {
       transaction = await PaymentTransaction.findOneAndUpdate(
         { _id: transaction._id, status: "pending" },
@@ -67,6 +74,9 @@ router.post("/:id/approve", async (req, res) => {
       transaction = await activateMembership(transaction);
     } else if (transaction.purpose === "donation") {
       transaction = await issueDonationReceipt(transaction);
+    } else if (transaction.purpose === "exam") {
+      await ExamRegistration.findByIdAndUpdate(transaction.examRegistrationId, { paymentStatus: "verified" });
+      transaction = await PaymentTransaction.findByIdAndUpdate(transaction._id, { fulfillmentStatus: "complete" }, { returnDocument: "after" });
     }
     res.json({ success: true, transaction });
   } catch (error) {
@@ -87,6 +97,7 @@ router.post("/:id/reject", async (req, res) => {
   if (transaction.purpose === "membership") {
     await MembershipRequest.findByIdAndUpdate(transaction.membershipRequestId, { paymentStatus: "failed" });
   }
+  if (transaction.purpose === "exam") await ExamRegistration.findByIdAndUpdate(transaction.examRegistrationId, { paymentStatus: "failed" });
   res.json({ success: true, transaction });
 });
 

@@ -6,9 +6,11 @@ const admin = require("../middleware/admin");
 const ExamCycle = require("../models/ExamCycle");
 const ExamRegistration = require("../models/ExamRegistration");
 const { examUpload } = require("../middleware/examUpload");
+const { paymentProofUpload } = require("../middleware/paymentProofUpload");
 const { uploadExamDocuments, removeExamDocuments, sendPrivateDocument } = require("../services/examDocumentStorage");
 const { generateAndStoreAdmitCard, deliverAdmitCard } = require("../services/admitCardService");
 const { publicExamState, publicCycle } = require("../services/examState");
+const { createExamUpiIntent, submitUpiProof } = require("../services/manualUpiPaymentService");
 
 const router = express.Router();
 const registrationLimiter = rateLimit({ windowMs: 30 * 60 * 1000, limit: 8, standardHeaders: true, legacyHeaders: false });
@@ -24,19 +26,24 @@ const cycleInput = (body) => {
   const status = text(body.status || "draft", 20);
   const registrationStart = new Date(body.registrationStart);
   const registrationEnd = new Date(body.registrationEnd);
-  const examDate = new Date(body.examDate);
+  const examDate = body.examDate ? new Date(body.examDate) : null;
   if (!title || !Number.isInteger(year) || year < 2000 || year > 2200) throw Object.assign(new Error("A valid title and year are required"), { status: 400 });
-  if ([registrationStart, registrationEnd, examDate].some((date) => Number.isNaN(date.getTime()))) throw Object.assign(new Error("Valid registration and examination dates are required"), { status: 400 });
+  if ([registrationStart, registrationEnd].some((date) => Number.isNaN(date.getTime())) || (examDate && Number.isNaN(examDate.getTime()))) throw Object.assign(new Error("Valid registration dates are required"), { status: 400 });
   if (!["draft", "scheduled", "active", "completed", "archived"].includes(status)) throw Object.assign(new Error("Invalid examination status"), { status: 400 });
   const instructions = Array.isArray(body.instructions) ? body.instructions : String(body.instructions || "").split("\n");
   const examDuration = text(body.examDuration, 40);
   const examinationCentre = text(body.examinationCentre, 500);
   const examAddress = text(body.examAddress, 500);
-  if (!examDuration || !examinationCentre || !examAddress) throw Object.assign(new Error("Exam duration, centre/venue and full address are required"), { status: 400 });
+  if (!examDuration) throw Object.assign(new Error("Event duration is required"), { status: 400 });
+  const registrationFee = Number(body.registrationFee || 0);
+  if (!Number.isFinite(registrationFee) || registrationFee < 0 || registrationFee > 100000) throw Object.assign(new Error("Enter a valid registration fee"), { status: 400 });
+  const list = (value, max) => (Array.isArray(value) ? value : String(value || "").split("\n")).map((item) => text(item, max)).filter(Boolean);
   return {
     title, year, slug: slugFor(body.slug || `${year}`), registrationStart, registrationEnd, examDate,
     reportingTime: text(body.reportingTime, 40), examStartTime: text(body.examStartTime, 40),
-    examDuration, examinationCentre, examAddress,
+    examDuration, examinationCentre, examAddress, registrationFee,
+    eligibleRegions: list(body.eligibleRegions, 80).slice(0, 30),
+    eligibleClassGroups: list(body.eligibleClassGroups, 40).slice(0, 30),
     instructions: instructions.map((item) => text(item, 500)).filter(Boolean).slice(0, 20),
     status, admitCardReleaseAt: body.admitCardReleaseAt ? new Date(body.admitCardReleaseAt) : null,
     announcementEnabled: body.announcementEnabled !== false && body.announcementEnabled !== "false",
@@ -47,10 +54,10 @@ const cycleInput = (body) => {
 const registrationInput = (body) => {
   const values = {
     studentName: text(body.studentName, 150), fatherName: text(body.fatherName, 150),
-    dateOfBirth: new Date(body.dateOfBirth), className: text(body.className, 80), fullAddress: text(body.fullAddress, 800),
+    dateOfBirth: new Date(body.dateOfBirth), className: text(body.className, 80), region: text(body.region, 80), fullAddress: text(body.fullAddress, 800),
     mobile: text(body.mobile, 20), email: text(body.email, 180).toLowerCase(),
   };
-  if (!values.studentName || !values.fatherName || !values.className || !values.fullAddress) throw Object.assign(new Error("Please complete every required student field"), { status: 400 });
+  if (!values.studentName || !values.fatherName || !values.className || !values.region || !values.fullAddress) throw Object.assign(new Error("Please complete every required student field"), { status: 400 });
   if (Number.isNaN(values.dateOfBirth.getTime()) || values.dateOfBirth > new Date()) throw Object.assign(new Error("Please enter a valid date of birth"), { status: 400 });
   if (!mobilePattern.test(values.mobile)) throw Object.assign(new Error("Please enter a valid WhatsApp mobile number"), { status: 400 });
   if (!emailPattern.test(values.email)) throw Object.assign(new Error("Please enter a valid email address"), { status: 400 });
@@ -108,7 +115,7 @@ router.get("/admin/registrations", auth, admin, async (req, res, next) => {
       query.$or = [{ studentName: regex }, { applicationNumber: regex }, { email: regex }, { mobile: regex }];
     }
     const registrations = await ExamRegistration.find(query).populate("examCycle", "title year slug").sort({ createdAt: -1 }).limit(500)
-      .select("applicationNumber studentName fatherName dateOfBirth className mobile email status adminRemarks admitCardStatus admitCardDeliveryStatus admitCardDeliveryAttempts admitCardGeneratedAt admitCardSentAt rollNumber createdAt examCycle");
+      .select("applicationNumber studentName fatherName dateOfBirth className region mobile email registrationFee paymentStatus paymentTransactionId status adminRemarks admitCardStatus admitCardDeliveryStatus admitCardDeliveryAttempts admitCardGeneratedAt admitCardSentAt rollNumber createdAt examCycle");
     res.json(registrations);
   } catch (error) { next(error); }
 });
@@ -182,6 +189,10 @@ router.post("/admin/registrations/:id/admit-card/resend", auth, admin, async (re
 
 router.post("/admin/registrations/:id/approve", auth, admin, async (req, res, next) => {
   try {
+    const candidate = await ExamRegistration.findById(req.params.id).populate("examCycle");
+    if (!candidate) return res.status(404).json({ message: "Registration not found" });
+    if (Number(candidate.registrationFee || 0) > 0 && candidate.paymentStatus !== "verified") return res.status(409).json({ message: "Verify the registration fee in Admin Payments before approving this application." });
+    if (!candidate.examCycle?.examDate || !candidate.examCycle?.reportingTime || !candidate.examCycle?.examStartTime || !candidate.examCycle?.examinationCentre || !candidate.examCycle?.examAddress) return res.status(409).json({ message: "Set the event date, time and venue in Exam Settings before approval so the Admit Card is accurate." });
     let registration = await ExamRegistration.findOneAndUpdate(
       { _id: req.params.id, status: { $ne: "approved" } },
       { $set: { status: "approved", adminRemarks: text(req.body.remarks, 1000), reviewedBy: req.user.id, reviewedAt: new Date(), admitCardStatus: "not_ready" } },
@@ -233,24 +244,42 @@ const requireOpenCycle = async (req, res, next) => {
 
 router.post("/:slug/registrations", registrationLimiter, requireOpenCycle, examUpload, async (req, res, next) => {
   let storedDocuments;
+  let registration;
   try {
     const cycle = req.examCycle;
     const values = registrationInput(req.body);
+    if (cycle.eligibleRegions?.length && !cycle.eligibleRegions.includes(values.region)) throw Object.assign(new Error("Registration is not available for the selected city/region."), { status: 400 });
+    if (cycle.eligibleClassGroups?.length && !cycle.eligibleClassGroups.includes(values.className)) throw Object.assign(new Error("Registration is not available for the selected class group."), { status: 400 });
     storedDocuments = await uploadExamDocuments(req.files);
     const suffix = require("crypto").randomBytes(4).toString("hex").toUpperCase();
-    const registration = await ExamRegistration.create({
+    registration = await ExamRegistration.create({
       ...values, normalizedStudentName: values.studentName.toLowerCase().replace(/\s+/g, " "), examCycle: cycle._id,
       applicationNumber: `ACE-${cycle.year}-${suffix}`,
+      registrationFee: Number(cycle.registrationFee || 0), paymentStatus: Number(cycle.registrationFee || 0) > 0 ? "pending" : "not_required",
       photoFile: storedDocuments.photo, aadhaarFile: storedDocuments.aadhaar, signatureFile: storedDocuments.signature,
     });
+    const paymentIntent = Number(cycle.registrationFee || 0) > 0 ? await createExamUpiIntent({ registration }) : null;
     res.status(201).json({
       message: "Registration submitted successfully.", studentName: registration.studentName,
-      applicationNumber: registration.applicationNumber, examination: cycle.title, status: "PENDING REVIEW",
+      applicationNumber: registration.applicationNumber, examination: cycle.title, status: paymentIntent ? "PAYMENT REQUIRED" : "PENDING REVIEW", paymentIntent,
     });
   } catch (error) {
+    if (registration) await ExamRegistration.deleteOne({ _id: registration._id });
     if (storedDocuments) await removeExamDocuments([storedDocuments.photo, storedDocuments.aadhaar, storedDocuments.signature]);
     if (error.code === 11000) error = Object.assign(new Error("A registration for this student already exists for this examination"), { status: 409 });
     next(error);
+  }
+});
+
+router.post("/payments/:id/proof", registrationLimiter, paymentProofUpload, async (req, res) => {
+  try {
+    const result = await submitUpiProof({
+      transactionId: req.params.id, purpose: "exam", accessToken: req.body.accessToken, file: req.file,
+      transactionReference: req.body.transactionReference, paymentDate: req.body.paymentDate,
+    });
+    res.status(result.duplicate ? 200 : 201).json({ success: true, duplicate: result.duplicate, status: result.transaction.status, state: "PENDING_VERIFICATION" });
+  } catch (error) {
+    res.status(error.status || 500).json({ message: error.status ? error.message : "Registration payment proof could not be submitted.", code: error.code });
   }
 });
 

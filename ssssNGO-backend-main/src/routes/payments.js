@@ -28,6 +28,7 @@ router.get("/public-config", async (_req, res) => {
       payeeName: settings.upi.payeeName,
       membershipEnabled: settings.upi.enabled && settings.upi.membershipEnabled,
       donationEnabled: settings.upi.enabled && settings.upi.donationEnabled,
+      examEnabled: settings.upi.enabled && settings.upi.examEnabled,
     },
     membership: {
       yearlyAmount: pricing.membership.yearlyAmount,
