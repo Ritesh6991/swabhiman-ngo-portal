@@ -156,12 +156,14 @@ const AdminExamSettings = () => {
             value={form.reportingTime}
             onChange={(v) => set("reportingTime", v)}
             placeholder="09:00 AM"
+            required={false}
           />
           <Field
             label="Exam Start Time"
             value={form.examStartTime}
             onChange={(v) => set("examStartTime", v)}
             placeholder="10:00 AM"
+            required={false}
           />
           <Field
             label="Exam Duration"
