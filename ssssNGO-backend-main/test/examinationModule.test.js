@@ -1,6 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const { publicExamState, publicCycle } = require("../src/services/examState");
+const { buildExamAnnouncementMessage } = require("../src/services/examAnnouncement");
 const { detectExamDocumentContent } = require("../src/middleware/examUpload");
 const generateAdmitCard = require("../src/utils/generateAdmitCard");
 const fs = require("fs");
@@ -34,6 +35,16 @@ test("public examination response does not expose admin or private fields", () =
   assert.equal(result.updatedBy, undefined);
   assert.equal(result.registrationFee, 200);
   assert.deepEqual(result.eligibleRegions, ["Delhi", "Noida"]);
+});
+
+test("workshop announcement includes confirmed details without inventing an event date", () => {
+  const message = buildExamAnnouncementMessage(cycle({ examDate: null, examDuration: "2 Hours" }), "open");
+  assert.match(message, /Fee: ₹200/);
+  assert.match(message, /Class 6 to 8/);
+  assert.match(message, /Delhi/);
+  assert.match(message, /Duration: 2 Hours/);
+  assert.match(message, /Event schedule: To be announced/);
+  assert.doesNotMatch(message, /1970|Invalid Date/);
 });
 
 test("examination document validation checks file signatures, not only MIME names", () => {

@@ -4,6 +4,7 @@ const admin = require("../middleware/admin");
 const Announcement = require("../models/Announcement");
 const ExamCycle = require("../models/ExamCycle");
 const { publicExamState } = require("../services/examState");
+const { buildExamAnnouncementMessage } = require("../services/examAnnouncement");
 
 const router = express.Router();
 const clean = (value, max) => String(value || "").trim().replace(/[<>]/g, "").slice(0, max);
@@ -38,9 +39,7 @@ router.get("/active", async (_req, res, next) => {
       if (state === "closed" && now > new Date(exam.examDate)) return null;
       return {
         _id: `exam-${exam._id}`, title: exam.title,
-        message: state === "open" ? `Registrations open until ${new Date(exam.registrationEnd).toLocaleDateString("en-IN")}. Exam: ${new Date(exam.examDate).toLocaleDateString("en-IN")}.`
-          : state === "upcoming" ? `Registration opens ${new Date(exam.registrationStart).toLocaleDateString("en-IN")}.`
-            : "Registrations closed.",
+        message: buildExamAnnouncementMessage(exam, state),
         type: "examination", placement: exam.homepageHighlight ? "both" : "sitewide", priority: 90,
         ctaLabel: state === "open" ? "Register Now" : "View Details", ctaLink: `/exam-registration/${exam.slug}`,
         registrationState: state, linkedExamCycle: exam._id,
