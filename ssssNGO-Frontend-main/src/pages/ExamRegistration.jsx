@@ -8,7 +8,7 @@ const textFields = [
   ["studentName", "Student's Name", "text", "Enter the student's full name"],
   ["fatherName", "Father's Name", "text", "Enter the father's full name"],
   ["dateOfBirth", "Date of Birth", "date", ""],
-  ["mobile", "Mobile Number (WhatsApp)", "tel", "+91 98765 43210"],
+  ["mobile", "Mobile Number (WhatsApp)", "tel", "Enter WhatsApp mobile number"],
   ["email", "Email Address", "email", "student@example.com"],
 ];
 
